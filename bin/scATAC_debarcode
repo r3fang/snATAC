@@ -1,0 +1,147 @@
+#!/opt/python/bin/python
+
+import gzip
+import sys
+import collections
+import os
+
+def min_dist(s, sl):
+    """ return the string with min edit distance """
+    ss = sl[:]
+    if len(s) == 0: sys.exit("error(min_dist): inquiry string has length 0")
+    if len(ss) == 0: sys.exit("error(min_dist): inquiry string list has 0 elements")
+    if ([len(s) == len(sj) for sj in ss].count(False) > 0): sys.exit("error(min_dist): different string length")
+    dists = [[a == b for (a,b) in zip(s, sj)].count(False) for sj in ss]
+    min_value = min(dists)
+    min_index = dists.index(min(dists))
+    min_s = ss[min_index]
+        
+    # find the 2nd min element in the list
+    del dists[min_index]
+    del ss[min_index]    
+
+    min_value2 = min(dists)
+    min_index2 = dists.index(min(dists))
+    min_s2 = ss[min_index2]
+    return (min_s, min_value, min_s2, min_value2)
+  
+def main():
+    fi1 = gzip.open('Undetermined_S0_L001_I1_001.fastq.gz', 'rb')
+    fi2 = gzip.open('Undetermined_S0_L001_I2_001.fastq.gz', 'rb')
+    fr1 = gzip.open('Undetermined_S0_L001_R1_001.fastq.gz', 'rb')
+    fr2 = gzip.open('Undetermined_S0_L001_R2_001.fastq.gz', 'rb')
+    max_mm = 2
+    dirt = '/oasis/tscc/scratch/r3fang/github/scATAC/barcodes/'
+    
+    
+    """ main function """
+    if os.path.isfile(dirt+'/r7'): 
+        table_r7 = [x.strip() for x in open(dirt+'/r7').readlines()]
+    else:
+        sys.exit("error(main): r7 file not exists")
+
+    if os.path.isfile(dirt+'/i7'): 
+        table_i7 = [x.strip() for x in open(dirt+'/i7').readlines()]
+    else:
+        sys.exit("error(main): i7 file not exists")
+
+    if os.path.isfile(dirt+'/i5'): 
+        table_i5 = [x.strip() for x in open(dirt+'/i5').readlines()]
+    else:
+        sys.exit("error(main): i5 file not exists")
+
+    if os.path.isfile(dirt+'/r5'): 
+        table_r5 = [x.strip() for x in open(dirt+'/r5').readlines()]
+    else:
+        sys.exit("error(main): r5 file not exists")
+        
+    if len(table_r7) == 0: sys.exit("error(main): r7 table has 0 elements")
+    if len(table_i7) == 0: sys.exit("error(main): i7 table has 0 elements")
+    if len(table_r5) == 0: sys.exit("error(main): r5 table has 0 elements")
+    if len(table_i5) == 0: sys.exit("error(main): i5 table has 0 elements")
+    
+    while True:
+        cur_i1_name = fi1.readline().strip()[1:]
+        cur_i1_read = fi1.readline().strip()
+        cur_i1_plus = fi1.readline().strip()
+        cur_i1_qual = fi1.readline().strip()
+
+        cur_i2_name = fi2.readline().strip()[1:]
+        cur_i2_read = fi2.readline().strip()
+        cur_i2_plus = fi2.readline().strip()
+        cur_i2_qual = fi2.readline().strip()
+
+        cur_r1_name = fr1.readline().strip()[1:]
+        cur_r1_read = fr1.readline().strip()
+        cur_r1_plus = fr1.readline().strip()
+        cur_r1_qual = fr1.readline().strip()
+
+        cur_r2_name = fr2.readline().strip()[1:]
+        cur_r2_read = fr2.readline().strip()
+        cur_r2_plus = fr2.readline().strip()
+        cur_r2_qual = fr2.readline().strip()
+        
+        if cur_i1_name == "" or cur_i2_name == "" or cur_r1_name == "" or cur_r2_name == "": break
+        if not (cur_i1_name.split()[0] == cur_i2_name.split()[0] == cur_r1_name.split()[0]  == cur_r2_name.split()[0]): sys.exit("error(main): read name not matched")        
+        cur_r7 = cur_i1_read[:8]
+        cur_i7 = cur_i1_read[-8:]
+        cur_i5 = cur_i2_read[:8]
+        cur_r5 = cur_i2_read[-8:]        
+        cur_barcode = cur_r7 + cur_i7 + cur_i5 + cur_r5
+        if cur_barcode.count('N') >= 12: continue
+
+        if not cur_r7 in table_r7:  # if not perfectly matched
+            (opt_match, num_mm, opt_match2, num_mm2) = min_dist(cur_r7, table_r7)
+            if num_mm <= max_mm and abs(num_mm2 - num_mm) > 1:
+                cur_r7 = opt_match
+            else:
+                continue
+        
+        if not cur_r5 in table_r5:
+           (opt_match, num_mm, opt_match2, num_mm2) = min_dist(cur_r5, table_r5)
+           if num_mm <= max_mm and abs(num_mm2 - num_mm) > 1: 
+               cur_r5 = opt_match
+           else:
+               continue
+               
+        
+        if cur_i5 not in table_i5:
+            (opt_match, num_mm, opt_match2, num_mm2) = min_dist(cur_i5, table_i5)
+            if num_mm <= max_mm and abs(num_mm2 - num_mm) > 1: 
+                cur_i5 = opt_match
+            else:
+                continue
+        
+        if cur_i7 not in table_i7:
+            (opt_match, num_mm, opt_match2, num_mm2) = min_dist(cur_i7, table_i7)
+            if num_mm <= max_mm and abs(num_mm2 - num_mm) > 1: 
+                cur_i7 = opt_match
+            else:
+                continue
+        
+        try:
+            print '@' + cur_barcode + ':' + cur_r1_name
+            print cur_r1_read
+            print '+'
+            print cur_r1_qual
+            print '@' + cur_barcode + ':' + cur_r2_name
+            print cur_r2_read
+            print '+'
+            print cur_r2_qual
+        except IOError:
+            try:
+                sys.stdout.close()
+            except IOError:
+                pass
+            try:
+                sys.stderr.close()
+            except IOError:
+                pass
+                
+    fi1.close()
+    fi2.close()
+    fr1.close()
+    fr2.close()
+
+if __name__ == '__main__':
+    main()
