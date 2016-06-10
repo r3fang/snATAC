@@ -6,8 +6,7 @@ command -v samtools >/dev/null 2>&1 || { echo >&2 "scATAC requires samtools but 
 command -v java >/dev/null 2>&1 || { echo >&2 "scATAC requires java but it is not installed. Aborting."; exit 1; }
 command -v scATAC_barcode_err_correct >/dev/null 2>&1 || { echo >&2 "scATAC requires scATAC_barcode_err_correct but it is not installed. Aborting."; exit 1; }
 command -v scATAC_decell >/dev/null 2>&1 || { echo >&2 "scATAC requires scATAC_decell but it is not installed. Aborting."; exit 1; }
-
-#scATAC_rm_cell_with_low_cov='/oasis/tscc/scratch/r3fang/collaboration/Seb_04_26_2016/Mixtures_published_download/HL60_GM12878/scATAC_rm_cell_with_low_cov.py'
+command -v scATAC_rm_cell_with_low_cov >/dev/null 2>&1 || { echo >&2 "scATAC requires scATAC_rm_cell_with_low_cov but it is not installed. Aborting."; exit 1; }
 
 # PART II usage info
 usage(){
@@ -188,10 +187,6 @@ done
 echo 'Step 6. merge cells'
 samtools cat -o $PREFIX.umap.corrected.nsorted.nodup.bam $PREFIX\_TMP/*.sorted.filtered.bam
 
-echo 'Step 7. remove intermedia files/folders'
-rm $PREFIX.umap.2mm.nsorted.header
-rm -r $PREFIX\_TMP/
-
 echo 'Step 8. sort by genomic coordinates'
 samtools sort -m 1G $PREFIX.umap.corrected.nsorted.nodup.bam $PREFIX.umap.corrected.nsorted.nodup.gsorted
 
@@ -200,14 +195,30 @@ samtools view $PREFIX.umap.corrected.nsorted.nodup.gsorted.bam \
 | awk '{split($1,a,":"); print a[1]}' | sort | uniq -c | awk '{print $2, $1}' \
 | sort -k2rn - > $PREFIX.umap.corrected.nsorted.nodup.gsorted.stat 
 
-#echo 'Step 10. filter cells with low reads (less than 500 reads)'
-#samtools view -h $PREFIX.umap.2mm.nsorted.nodup.gsorted.bam \
-#| python $scATAC_rm_cell_with_low_cov 500 $PREFIX.umap.2mm.nsorted.nodup.gsorted.stat - \
-#| samtools view -bS - > $PREFIX.umap.2mm.nsorted.nodup.gsorted.filtered.bam
-#
-##echo 'Step 11. convert bam file to bigwig for visualization'
-##bamToBed -i $PREFIX.umap.2mm.nsorted.nodup.gsorted.bam \
-##| slopBed -s -l 0 -r 300 -i stdin -g hg19.genome \
-##| genomeCoverageBed -g hg19.genome -i stdin -bg \
-##| wigToBigWig stdin hg19.genome SRR1947693.umap.2mm.nsorted.uniq.filtered.gsorted.bw
-#
+echo 'Step 10. filter cells with low reads (less than 500 reads)'
+samtools view -h $PREFIX.umap.corrected.nsorted.nodup.gsorted.bam \
+| scATAC_rm_cell_with_low_cov $PREFIX.umap.corrected.nsorted.nodup.gsorted.stat - \
+| samtools view -bS - > $PREFIX.umap.corrected.nsorted.nodup.gsorted.filtered.bam
+
+#echo
+#echo "$(date) Step7. Summerizing ..."
+#if [ ${FASTQ1: -4} == ".bz2" ];
+#then
+#	TOTAL_READS=$(bzcat $FASTQ1 | wc -l | awk '{print $1}')
+#elif [ ${FASTQ1: -3} == ".gz" ]
+#then
+#	TOTAL_READS=$(zcat $FASTQ1 | wc -l | awk '{print $1}')
+#else
+#	TOTAL_READS=$(wc -l $FASTQ1 | awk '{print $1}')
+#fi
+
+#UNIQ_READS=$(samtools view $PREFIX.umap.bam | wc -l | awk '{print $1}')
+#UNIQ_CORRECTED_READS=$(samtools view $PREFIX.umap.corrected.bam | wc -l | awk '{print $1}')
+#UNIQ_CORRECTED_NODUP_READS=$(samtools view $PREFIX.umap.corrected.nsorted.nodup.bam | wc -l | awk '{print $1}')
+
+
+#echo 'Step 7. remove intermedia files/folders'
+#rm $PREFIX.umap.2mm.nsorted.header
+#rm -r $PREFIX\_TMP/
+
+
