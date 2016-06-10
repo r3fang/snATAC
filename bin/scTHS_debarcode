@@ -169,7 +169,6 @@ def main():
     fi1.close()
     fi2.close()
     fr1.close()
-    fr2.close()
 
 if __name__ == '__main__':
     main()
