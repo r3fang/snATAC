@@ -3,6 +3,8 @@
 # PART I check weather softwares installed
 command -v bwa >/dev/null 2>&1 || { echo >&2 "scATAC requires bwa but it is not installed. Aborting."; exit 1; }
 command -v samtools >/dev/null 2>&1 || { echo >&2 "scATAC requires samtools but it is not installed. Aborting."; exit 1; }
+command -v java >/dev/null 2>&1 || { echo >&2 "scATAC requires java but it is not installed. Aborting."; exit 1; }
+command -v scATAC_barcode_err_correct >/dev/null 2>&1 || { echo >&2 "scATAC requires scATAC_barcode_err_correct but it is not installed. Aborting."; exit 1; }
 
 
 # PART II usage info
@@ -30,9 +32,9 @@ scATAC -t 10 -f demo_R1.fastq.bz2 -r demo_R2.fastq.bz2 -p Picard/MarkDuplicates.
 Options:    
 	-h, --help			show this help message and exit.
 	-t  THREADS			threads [1].
-	-f  FASTQ1			first mate of pair-end sequencing data [.fq/.fastq/.gz/.bz2].
-	-r  FASTQ2			second mate of pair-end sequencing data [.fq/.fastq/.gz/.bz2].
-	-p  MARK_DUPLICATE  		path to picard MarkDuplicates.jar [bin/MarkDuplicates.jar].
+	-f  FASTQ1			first mate of pair-end sequencing data [.fq/.fastq/.gz].
+	-r  FASTQ2			second mate of pair-end sequencing data [.fq/.fastq/.gz].
+	-p  MARK_DUPLICATE  		path to picard MarkDuplicates.jar [MarkDuplicates.jar].
 	-n  PREFIX			prefix of output files.
 	-g  BWA_GENOME			BWA indexed reference genome.
 	-m  MIN_READ			cells with reads less than MIN_READ will be filtered.
@@ -100,10 +102,11 @@ fi
 #scATAC_decell='/oasis/tscc/scratch/r3fang/collaboration/Seb_04_26_2016/Mixtures_published_download/HL60_GM12878/scATAC_decell.py'
 #mark_duplcate='/oasis/tscc/scratch/r3fang/github/Hicmap_Ren/Picard/MarkDuplicates.jar'
 #scATAC_rm_cell_with_low_cov='/oasis/tscc/scratch/r3fang/collaboration/Seb_04_26_2016/Mixtures_published_download/HL60_GM12878/scATAC_rm_cell_with_low_cov.py'
-## echo 'Step 1. map and filter reads with poor mappability'
-## bwa mem -M -t 5 $GENOME $PREFIX.R1.fastq.gz $PREFIX.R2.fastq.gz \
-## | samtools view -q 10 -bS - > $PREFIX.umap.bam
-#
+
+echo 'Step 1. map and filter reads with poor mappability'
+bwa mem -M -t 5 $GENOME $PREFIX.R1.fastq.gz $PREFIX.R2.fastq.gz \
+| samtools view -q 10 -bS - > $PREFIX.umap.bam
+
 #echo 'Step 2. correct barcode allowing 2 mismatches'
 #samtools view -h $PREFIX.umap.bam \
 #| python $scATAC_barcode_err_correct 2 \
