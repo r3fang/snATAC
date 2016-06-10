@@ -4,6 +4,7 @@
 
 import sys
 import collections
+import os
 
 def min_dist(s, sl):
     """ return the string with min edit distance """
