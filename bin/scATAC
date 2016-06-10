@@ -24,10 +24,10 @@ Step 6. merge reads from different cells;
 Step 7. generate barcode frequency table;
 Step 8. filter cells with low reads (less than 500 reads default);
 
-usage: ${0##*/} [-h] [-t THREADS] [-f FASTQ1] [-r FASTQ2] [-p MarkDuplicates.jar] [-n PREFIX] [-g BWA_GENOME] [-m MIN_READ]
+usage: ${0##*/} [-h] [-t THREADS] [-f FASTQ1] [-r FASTQ2] [-p MarkDuplicates.jar] [-n PREFIX] [-g BWA_GENOME] [-m MIN_READ] [-d BARCODE_DIR]
 
 Example:
-scATAC -t 10 -f demo_R1.fastq.bz2 -r demo_R2.fastq.bz2 -p Picard/MarkDuplicates.jar -n demo -g hg19.fa
+scATAC -t 2 -f demo_R1.fastq.gz -r demo_R2.fastq.gz -p Picard/MarkDuplicates.jar -n demo -g hg19.fa -m 500 -d ./barcodes
 
 Options:    
 	-h, --help			show this help message and exit.
@@ -38,15 +38,15 @@ Options:
 	-n  PREFIX			prefix of output files.
 	-g  BWA_GENOME			BWA indexed reference genome.
 	-m  MIN_READ			cells with reads less than MIN_READ will be filtered.
+	-d  BARCODE_DIR			directory that contains r7, i7, i5 and r5 barcode.
 EOF
 } 
 
 # PART III default params
 THREADS=1
 
-
 # PART IV receiving arguments
-while getopts ":t:f:r:p:n:g:c:d:" opt;
+while getopts ":t:f:r:p:n:g:m:d:" opt;
 do
 	case "$opt" in
 		t) THREADS=$OPTARG;;
@@ -56,7 +56,9 @@ do
 		n) PREFIX=$OPTARG;;
 		g) GENOME=$OPTARG;;
 		m) MIN_READ=$OPTARG;;
+		d) BARCODE_DIR=$OPTARG;;
 		\?) usage
+			echo "input error"
 			exit 1
 			;;
 	esac
@@ -67,6 +69,7 @@ if [ $# -lt 10 ] ; then
    echo "error: too few arguments"
    exit 1
 fi
+
 
 # check if files exist
 if [ ! -f $FASTQ1 ]; then
@@ -87,9 +90,34 @@ if [ ! -f $MARK_DUPLICATE ]; then
 	exit 1
 fi
 
+
 if [ ! -f $GENOME ]; then
 	usage
     echo "error: '$GENOME' not exists.";
+	exit 1
+fi
+
+if [ ! -f $BARCODE_DIR/r7 ]; then
+	usage
+    echo "error: '$BARCODE_DIR/r7' not exists.";
+	exit 1
+fi
+
+if [ ! -f $BARCODE_DIR/i7 ]; then
+	usage
+    echo "error: '$BARCODE_DIR/i7' not exists.";
+	exit 1
+fi
+
+if [ ! -f $BARCODE_DIR/i5 ]; then
+	usage
+    echo "error: '$BARCODE_DIR/i5' not exists.";
+	exit 1
+fi
+
+if [ ! -f $BARCODE_DIR/r5 ]; then
+	usage
+    echo "error: '$BARCODE_DIR/r5' not exists.";
 	exit 1
 fi
 
@@ -103,15 +131,15 @@ fi
 #mark_duplcate='/oasis/tscc/scratch/r3fang/github/Hicmap_Ren/Picard/MarkDuplicates.jar'
 #scATAC_rm_cell_with_low_cov='/oasis/tscc/scratch/r3fang/collaboration/Seb_04_26_2016/Mixtures_published_download/HL60_GM12878/scATAC_rm_cell_with_low_cov.py'
 
-echo 'Step 1. map and filter reads with poor mappability'
-bwa mem -M -t 5 $GENOME $PREFIX.R1.fastq.gz $PREFIX.R2.fastq.gz \
-| samtools view -q 10 -bS - > $PREFIX.umap.bam
-
-#echo 'Step 2. correct barcode allowing 2 mismatches'
-#samtools view -h $PREFIX.umap.bam \
-#| python $scATAC_barcode_err_correct 2 \
-#| samtools view -bS - > $PREFIX.umap.2mm.bam
-#
+# echo 'Step 1. map and filter reads with poor mappability'
+# bwa mem -M -t 5 $GENOME $FASTQ1 $FASTQ2 \
+# | samtools view -q 10 -bS - > $PREFIX.umap.bam
+# 
+# echo 'Step 2. correct barcode allowing 2 mismatches'
+# samtools view -h $PREFIX.umap.bam \
+# | scATAC_barcode_err_correct 2 \
+# | samtools view -bS - > $PREFIX.umap.2mm.bam
+# 
 #echo 'Step 3. sort reads based on name'
 #samtools sort -n -m 1G $PREFIX.umap.2mm.bam $PREFIX.umap.2mm.nsorted
 #
