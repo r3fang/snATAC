@@ -6,13 +6,12 @@ command -v samtools >/dev/null 2>&1 || { echo >&2 "scATAC requires samtools but 
 command -v java >/dev/null 2>&1 || { echo >&2 "scATAC requires java but it is not installed. Aborting."; exit 1; }
 command -v scATAC_barcode_err_correct >/dev/null 2>&1 || { echo >&2 "scATAC requires scATAC_barcode_err_correct but it is not installed. Aborting."; exit 1; }
 
-
 # PART II usage info
 usage(){
 cat << EOF
 
 Program: scATAC (dual-barcode single cell ATAC-seq analysis pipeline by Ren Lab)
-Version: 12.17-r15
+Version: 06.10.2016
 Contact: Rongxin Fang <r3fang@ucsd.edu>
 Ren Lab: http://bioinformatics-renlab.ucsd.edu/rentrac/
 
@@ -24,39 +23,42 @@ Step 6. merge reads from different cells;
 Step 7. generate barcode frequency table;
 Step 8. filter cells with low reads (less than 500 reads default);
 
-usage: ${0##*/} [-h] [-t THREADS] [-f FASTQ1] [-r FASTQ2] [-p MarkDuplicates.jar] [-n PREFIX] [-g BWA_GENOME] [-m MIN_READ] [-d BARCODE_DIR]
+usage: ${0##*/} [-h] [-t THREADS] [-f FASTQ1] [-r FASTQ2] [-b BARCODE_DIR] [-d MAX_BARCODE_MISMATCH][-p MarkDuplicates.jar] [-n PREFIX] [-g BWA_GENOME] [-m MIN_READ] 
 
 Example:
-scATAC -t 2 -f demo_R1.fastq.gz -r demo_R2.fastq.gz -p Picard/MarkDuplicates.jar -n demo -g hg19.fa -m 500 -d ./barcodes
+scATAC -t 2 -f demo_R1.fastq.gz -r demo_R2.fastq.gz -b ./barcodes -d 2 -p Picard/MarkDuplicates.jar -n demo -g hg19.fa -m 500 
 
 Options:    
 	-h, --help			show this help message and exit.
 	-t  THREADS			threads [1].
 	-f  FASTQ1			first mate of pair-end sequencing data [.fq/.fastq/.gz].
 	-r  FASTQ2			second mate of pair-end sequencing data [.fq/.fastq/.gz].
+	-b  BARCODE_DIR			directory that contains r7, i7, i5 and r5 barcode.
+	-d  MAX_BARCODE_MISMATCH			max barcode mismatch allowed [2].
 	-p  MARK_DUPLICATE  		path to picard MarkDuplicates.jar [MarkDuplicates.jar].
 	-n  PREFIX			prefix of output files.
 	-g  BWA_GENOME			BWA indexed reference genome.
 	-m  MIN_READ			cells with reads less than MIN_READ will be filtered.
-	-d  BARCODE_DIR			directory that contains r7, i7, i5 and r5 barcode.
 EOF
 } 
 
 # PART III default params
 THREADS=1
+MAX_BARCODE_MISMATCH=2
 
 # PART IV receiving arguments
-while getopts ":t:f:r:p:n:g:m:d:" opt;
+while getopts ":t:f:r:b:d:p:n:g:m:" opt;
 do
 	case "$opt" in
 		t) THREADS=$OPTARG;;
 		f) FASTQ1=$OPTARG;;
 		r) FASTQ2=$OPTARG;;
+		b) BARCODE_DIR=$OPTARG;;
+		d) MAX_BARCODE_MISMATCH=$OPTARG;;
 		p) MARK_DUPLICATE=$OPTARG;;
 		n) PREFIX=$OPTARG;;
 		g) GENOME=$OPTARG;;
 		m) MIN_READ=$OPTARG;;
-		d) BARCODE_DIR=$OPTARG;;
 		\?) usage
 			echo "input error"
 			exit 1
@@ -121,33 +123,44 @@ if [ ! -f $BARCODE_DIR/r5 ]; then
 	exit 1
 fi
 
+# check if input type
+re='^[0-9]+$'
+if ! [[ $THREADS =~ $re ]] ; then
+   echo "error: '$THREADS' Not a number" >&2;
+   exit 1
+fi
 
-#PREFIX='Undetermined_S0_L001' # make sure your imput fastq files is $PREFIX.R1.fastq.gz and $PREFIX.R2.fastq.gz
-#GENOME='/oasis/tscc/scratch/r3fang/data/mixture_hg19_mm9/Sequence/WholeGenomeFasta/genome.fa'
-#GENOME_SIZE='/oasis/tscc/scratch/r3fang/data/mixture_hg19_mm9/Sequence/WholeGenomeFasta/genome.fai'
-#TMP_FOLDER='Undetermined_S0_L001.tmp'
-#scATAC_barcode_err_correct='/oasis/tscc/scratch/r3fang/collaboration/Seb_04_26_2016/Mixtures_published_download/HL60_GM12878/scATAC_barcode_err_correct.py'
+if ! [[ $MAX_BARCODE_MISMATCH =~ $re ]] ; then
+   echo "error: '$MAX_BARCODE_MISMATCH' Not a number" >&2;
+   exit 1
+fi
+
+if ! [[ $MIN_READ =~ $re ]] ; then
+   echo "error: '$MIN_READ' Not a number" >&2;
+   exit 1
+fi
+
 #scATAC_decell='/oasis/tscc/scratch/r3fang/collaboration/Seb_04_26_2016/Mixtures_published_download/HL60_GM12878/scATAC_decell.py'
 #mark_duplcate='/oasis/tscc/scratch/r3fang/github/Hicmap_Ren/Picard/MarkDuplicates.jar'
 #scATAC_rm_cell_with_low_cov='/oasis/tscc/scratch/r3fang/collaboration/Seb_04_26_2016/Mixtures_published_download/HL60_GM12878/scATAC_rm_cell_with_low_cov.py'
 
-# echo 'Step 1. map and filter reads with poor mappability'
-# bwa mem -M -t 5 $GENOME $FASTQ1 $FASTQ2 \
-# | samtools view -q 10 -bS - > $PREFIX.umap.bam
-# 
-# echo 'Step 2. correct barcode allowing 2 mismatches'
-# samtools view -h $PREFIX.umap.bam \
-# | scATAC_barcode_err_correct 2 \
-# | samtools view -bS - > $PREFIX.umap.2mm.bam
-# 
-#echo 'Step 3. sort reads based on name'
-#samtools sort -n -m 1G $PREFIX.umap.2mm.bam $PREFIX.umap.2mm.nsorted
-#
-#echo 'Step 4. seperate reads into each cell' 
-#mkdir $TMP_FOLDER # create a tmp folder
-#samtools view $PREFIX.umap.2mm.nsorted.bam \
-#| python $scATAC_decell $TMP_FOLDER -
-#
+echo 'Step 1. map and filter reads with poor mappability'
+bwa mem -M -t 5 $GENOME $FASTQ1 $FASTQ2 \
+| samtools view -q 10 -bS - > $PREFIX.umap.bam
+
+echo 'Step 2. correct barcode allowing mismatches'
+samtools view -h $PREFIX.umap.bam \
+| scATAC_barcode_err_correct $MAX_BARCODE_MISMATCH $BARCODE_DIR \
+| samtools view -bS - > $PREFIX.umap.corrected.bam
+
+echo 'Step 3. sort reads based on name'
+samtools sort -n -m 1G $PREFIX.umap.corrected.bam $PREFIX.umap.corrected.nsorted
+
+echo 'Step 4. seperate reads into each cell' 
+mkdir $PREFIX\_TMP # create a tmp folder
+samtools view $PREFIX.umap.corrected.nsorted.bam \
+| python $scATAC_decell $PREFIX\_TMP -
+
 #echo 'Step 5. remove PCR duplication for each cell'
 #samtools view -H $PREFIX.umap.2mm.nsorted.bam > $PREFIX.umap.2mm.nsorted.header
 #for line in `ls $TMP_FOLDER | grep .sam`

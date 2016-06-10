@@ -1,6 +1,7 @@
 #!/opt/python/bin/python
 
-# ./scATAC_barcode_err_correct 2 /oasis/tscc/scratch/r3fang/github/scATAC/barcodes/r7_table /oasis/tscc/scratch/r3fang/github/scATAC/barcodes/i7_table /oasis/tscc/scratch/r3fang/github/scATAC/barcodes/i5_table /oasis/tscc/scratch/r3fang/github/scATAC/barcodes/r5_table
+# ./scATAC_barcode_err_correct 2 /oasis/tscc/scratch/r3fang/github/scATAC/barcodes/
+
 import sys
 import collections
 
@@ -26,17 +27,29 @@ def min_dist(s, sl):
   
 def main():
     max_mm = int(sys.argv[1])
-    r7 = sys.argv[2]
-    i7 = sys.argv[3]
-    i5 = sys.argv[4]
-    r5 = sys.argv[5]
+    dirt = sys.argv[2]
     
     """ main function """
-    table_r7 = [x.strip() for x in open(r7).readlines()]
-    table_i7 = [x.strip() for x in open(i7).readlines()]
-    table_r5 = [x.strip() for x in open(i5).readlines()]
-    table_i5 = [x.strip() for x in open(r5).readlines()]
-    
+    if os.path.isfile(dirt+'/r7'): 
+        table_r7 = [x.strip() for x in open(dirt+'/r7').readlines()]
+    else:
+        sys.exit("error(main): r7 file not exists")
+
+    if os.path.isfile(dirt+'/i7'): 
+        table_i7 = [x.strip() for x in open(dirt+'/i7').readlines()]
+    else:
+        sys.exit("error(main): i7 file not exists")
+
+    if os.path.isfile(dirt+'/i5'): 
+        table_i5 = [x.strip() for x in open(dirt+'/i5').readlines()]
+    else:
+        sys.exit("error(main): i5 file not exists")
+
+    if os.path.isfile(dirt+'/r5'): 
+        table_r5 = [x.strip() for x in open(dirt+'/r5').readlines()]
+    else:
+        sys.exit("error(main): r5 file not exists")
+        
     if len(table_r7) == 0: sys.exit("error(main): r7 table has 0 elements")
     if len(table_i7) == 0: sys.exit("error(main): i7 table has 0 elements")
     if len(table_r5) == 0: sys.exit("error(main): r5 table has 0 elements")
