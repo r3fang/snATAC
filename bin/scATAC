@@ -159,10 +159,10 @@ samtools sort -n -m 1G $PREFIX.umap.corrected.bam $PREFIX.umap.corrected.nsorted
 echo 'Step 4. seperate reads into each cell' 
 mkdir $PREFIX\_TMP # create a tmp folder
 samtools view $PREFIX.umap.corrected.nsorted.bam \
-| python $scATAC_decell $PREFIX\_TMP -
+| scATAC_decell $PREFIX\_TMP -
 
 #echo 'Step 5. remove PCR duplication for each cell'
-#samtools view -H $PREFIX.umap.2mm.nsorted.bam > $PREFIX.umap.2mm.nsorted.header
+#samtools view -H $PREFIX.umap.corrected.nsorted.bam > $PREFIX.umap.corrected.nsorted.header
 #for line in `ls $TMP_FOLDER | grep .sam`
 #do
 #	barcode="${line%.*}"

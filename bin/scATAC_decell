@@ -1,0 +1,20 @@
+#!/opt/python/bin/python
+
+import sys
+import collections 
+
+prev_barcode = ""
+instances = []
+for line in sys.stdin:
+    cur_barcode = line.strip().split()[0].split(':')[0]
+    if cur_barcode != prev_barcode:
+        if(len(instances)>0):
+            with open(sys.argv[1] + '/' +  prev_barcode + '.sam', 'w') as fout:
+                for elem in instances:
+                    fout.write(elem)                    
+        prev_barcode = cur_barcode
+        instances = []
+        instances.append(line)
+    else:
+        instances.append(line)
+
