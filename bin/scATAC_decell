@@ -2,14 +2,15 @@
 import sys
 import collections 
 
-min_read = int(sys.argv[1])
+min_reads = int(sys.argv[1])
 dirt = sys.argv[2]
+
 prev_barcode = ""
 instances = []
 for line in sys.stdin:
     cur_barcode = line.strip().split()[0].split(':')[0]
     if cur_barcode != prev_barcode:
-        if(len(instances) >= min_read):
+        if(len(instances) >= min_reads):
             with open(dirt + '/' +  prev_barcode + '.sam', 'w') as fout:
                 for elem in instances:
                     fout.write(elem)                    

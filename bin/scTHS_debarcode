@@ -33,7 +33,7 @@ def main():
                       type="float",
                       )
 
-    if len(sys.argv) < 10:
+    if len(sys.argv) < 6:
         parser.print_help()
         exit('error: too few arguments')
 
