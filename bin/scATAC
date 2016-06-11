@@ -17,7 +17,6 @@ Version: 06.10.2016
 Contact: Rongxin Fang <r3fang@ucsd.edu>
 Ren Lab: http://bioinformatics-renlab.ucsd.edu/rentrac/
 
-Step 0. [Optional] decomplex and correct barcode error by allowing given mismatches;
 Step 1. map and filter scATAC reads with poor mappability;
 Step 2. split reads to individual cells based on the barcode information;
 Step 3. remove PCR duplication for each cell;
@@ -28,13 +27,12 @@ Step 6. filter cells with low reads (less than 500 reads default);
 usage: ${0##*/} [-h] [-t THREADS] [-f FASTQ1] [-r FASTQ2] [-p MarkDuplicates.jar] [-n PREFIX] [-g BWA_GENOME] [-m MIN_READ] 
 
 Example:
-scATAC -t 2 -f demo_R1.fastq.gz -r demo_R2.fastq.gz -p Picard/MarkDuplicates.jar -n demo -g hg19.fa -m 500 
+scATAC -t 2 -f demo_R1.fastq.gz -p Picard/MarkDuplicates.jar -n demo -g hg19.fa -m 500 
 
 Options:    
 	-h, --help			show this help message and exit.
-	-t  THREADS			threads [1].
-	-f  FASTQ1			first mate of pair-end sequencing data [.fq/.fastq/.gz].
-	-r  FASTQ2			second mate of pair-end sequencing data [.fq/.fastq/.gz].
+	-t  THREADS			number of threads [1].
+	-f  FASTQ			input fastq file [.fq/.fastq.gz].
 	-p  MARK_DUPLICATE  		path to picard MarkDuplicates.jar [MarkDuplicates.jar].
 	-n  PREFIX			prefix of output files.
 	-g  BWA_GENOME			BWA indexed reference genome.
@@ -50,8 +48,7 @@ while getopts ":t:f:r:p:n:g:m:" opt;
 do
 	case "$opt" in
 		t) THREADS=$OPTARG;;
-		f) FASTQ1=$OPTARG;;
-		r) FASTQ2=$OPTARG;;
+		f) FASTQ=$OPTARG;;
 		p) MARK_DUPLICATE=$OPTARG;;
 		n) PREFIX=$OPTARG;;
 		g) GENOME=$OPTARG;;
@@ -63,16 +60,6 @@ do
 	esac
 done
 
-echo 
-echo THREADS=$THREADS
-echo FASTQ1=$FASTQ1
-echo FASTQ2=$FASTQ2
-echo MARK_DUPLICATE=$MARK_DUPLICATE
-echo PREFIX=$PREFIX
-echo GENOME=$GENOME
-echo MIN_READ=$MIN_READ
-echo 
-
 if [ $# -lt 10 ] ; then
    usage
    echo "error: too few arguments"
@@ -80,15 +67,9 @@ if [ $# -lt 10 ] ; then
 fi
 
 # check if files exist
-if [ ! -f $FASTQ1 ]; then
+if [ ! -f $FASTQ ]; then
 	usage
-    echo "error: '$FASTQ1' not exists.";
-	exit 1
-fi
-
-if [ ! -f $FASTQ2 ]; then
-	usage
-    echo "error: '$FASTQ2' not exists.";
+    echo "error: '$FASTQ' not exists.";
 	exit 1
 fi
 
@@ -105,7 +86,6 @@ if [ ! -f $GENOME ]; then
 	exit 1
 fi
 
-
 # check if input type
 re='^[0-9]+$'
 if ! [[ $THREADS =~ $re ]] ; then
@@ -118,18 +98,27 @@ if ! [[ $MIN_READ =~ $re ]] ; then
    exit 1
 fi
 
+echo 
+echo THREADS=$THREADS
+echo FASTQ=$FASTQ
+echo MARK_DUPLICATE=$MARK_DUPLICATE
+echo PREFIX=$PREFIX
+echo GENOME=$GENOME
+echo MIN_READ=$MIN_READ
+echo 
+
 echo 'Step 1. map and filter reads with poor mappability'
-bwa mem -M -t $THREADS $GENOME $FASTQ1 $FASTQ2 \
+bwa mem -M -t $THREADS $GENOME $FASTQ \
 | samtools view -q 10 -bS - > $PREFIX.umap.bam
 
-echo 'Step 2. sort reads based on name'
+echo 'Step 2. sort reads by its name'
 samtools sort -n -m 1G $PREFIX.umap.bam $PREFIX.umap.nsorted
 
 echo 'Step 3. split reads into each cell' 
 rm -r $PREFIX\_TMP # remove folder by force
 mkdir $PREFIX\_TMP # create a tmp folder
 samtools view $PREFIX.umap.nsorted.bam \
-| scATAC_decell $PREFIX\_TMP -
+| scATAC_decell $MIN_READ $PREFIX\_TMP - 
 
 echo 'Step 4. remove PCR duplication for each cell'
 samtools view -H $PREFIX.umap.nsorted.bam > $PREFIX.umap.nsorted.header
@@ -146,21 +135,21 @@ done
 echo 'Step 5. merge cells'
 samtools cat -o $PREFIX.umap.nsorted.nodup.bam $PREFIX\_TMP/*.sorted.filtered.bam
 
-echo 'Step 6. sort by genomic coordinates'
-samtools sort -m 1G $PREFIX.umap.nsorted.nodup.bam $PREFIX.umap.nsorted.nodup.gsorted
-
 echo 'Step 7. generate barcode frequency'
-samtools view $PREFIX.umap.nsorted.nodup.gsorted.bam \
+samtools view $PREFIX.umap.nsorted.nodup.bam \
 | awk '{split($1,a,":"); print a[1]}' | sort | uniq -c | awk '{print $2, $1}' \
-| sort -k2rn - > $PREFIX.umap.nsorted.nodup.gsorted.stat 
+| sort -k2rn - > $PREFIX.umap.nsorted.nodup.stat 
 
 echo 'Step 8. filter cells with low reads (less than 500 reads)'
-samtools view -h $PREFIX.umap.nsorted.nodup.gsorted.bam \
-| scATAC_rm_cell_with_low_cov $PREFIX.umap.nsorted.nodup.gsorted.stat - \
-| samtools view -bS - > $PREFIX.umap.nsorted.nodup.gsorted.filtered.bam
+samtools view -h $PREFIX.umap.nsorted.nodup.bam \
+| scATAC_rm_cell_with_low_cov $MIN_READ $PREFIX.umap.nsorted.nodup.stat - \
+| samtools view -bS - > $PREFIX.umap.nsorted.nodup.filtered.bam
+
+echo 'Step 6. sort by genomic coordinates'
+samtools sort -m 1G $PREFIX.umap.nsorted.nodup.filtered.bam $PREFIX.umap.nsorted.nodup.filtered.gsorted
 
 #echo
-#echo "$(date) Step7. Summerizing .."
+#echo "$(date) Step7. Summerizing ..."
 #if [ ${FASTQ1: -4} == ".bz2" ];
 #then
 #	TOTAL_READS=$(bzcat $FASTQ1 | wc -l | awk '{print $1}')
@@ -172,8 +161,8 @@ samtools view -h $PREFIX.umap.nsorted.nodup.gsorted.bam \
 #fi
 
 #UNIQ_READS=$(samtools view $PREFIX.umap.bam | wc -l | awk '{print $1}')
-#UNIQ__READS=$(samtools view $PREFIX.umap.bam | wc -l | awk '{print $1}')
-#UNIQ__NODUP_READS=$(samtools view $PREFIX.umap.nsorted.nodup.bam | wc -l | awk '{print $1}')
+#UNIQ_CORRECTED_READS=$(samtools view $PREFIX.umap.bam | wc -l | awk '{print $1}')
+#UNIQ_CORRECTED_NODUP_READS=$(samtools view $PREFIX.umap.nsorted.nodup.bam | wc -l | awk '{print $1}')
 
 
 #echo 'Step 7. remove intermedia files/folders'
