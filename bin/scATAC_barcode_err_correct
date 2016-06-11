@@ -1,6 +1,4 @@
-#!/opt/python/bin/python
-
-# ./scATAC_barcode_err_correct 2 /oasis/tscc/scratch/r3fang/github/scATAC/barcodes/
+#!/usr/bin/env python
 
 import sys
 import collections

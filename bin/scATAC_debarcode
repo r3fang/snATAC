@@ -1,5 +1,4 @@
-#!/opt/python/bin/python
-
+#!/usr/bin/env python
 import gzip
 import sys
 import collections
@@ -8,7 +7,7 @@ import operator
 import os.path
 import optparse
 
- def main():
+def main():
      """ main function """
     parser = optparse.OptionParser(usage='%prog [-h] [-a I1.fastq] [-b I2.fastq] [-c R1.fastq] [-d R2.fastq]',
                                    description='Decomplex single-cell ATAC-seq barcode allowing mismatch.')
