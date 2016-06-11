@@ -29,25 +29,25 @@ def main():
     dirt = sys.argv[2]
     
     """ main function """
-    if os.path.isfile(dirt+'/r7'): 
-        table_r7 = [x.strip() for x in open(dirt+'/r7').readlines()]
+    if os.path.isfile(dirt+'/r7_ATAC'): 
+        table_r7 = [x.strip() for x in open(dirt+'/r7_ATAC').readlines()]
     else:
-        sys.exit("error(main): r7 file not exists")
+        sys.exit("error(main): r7_ATAC file not exists")
 
-    if os.path.isfile(dirt+'/i7'): 
-        table_i7 = [x.strip() for x in open(dirt+'/i7').readlines()]
+    if os.path.isfile(dirt+'/i7_ATAC'): 
+        table_i7 = [x.strip() for x in open(dirt+'/i7_ATAC').readlines()]
     else:
-        sys.exit("error(main): i7 file not exists")
+        sys.exit("error(main): i7_ATAC file not exists")
 
-    if os.path.isfile(dirt+'/i5'): 
-        table_i5 = [x.strip() for x in open(dirt+'/i5').readlines()]
+    if os.path.isfile(dirt+'/i5_ATAC'): 
+        table_i5 = [x.strip() for x in open(dirt+'/i5_ATAC').readlines()]
     else:
-        sys.exit("error(main): i5 file not exists")
+        sys.exit("error(main): i5_ATAC file not exists")
 
-    if os.path.isfile(dirt+'/r5'): 
-        table_r5 = [x.strip() for x in open(dirt+'/r5').readlines()]
+    if os.path.isfile(dirt+'/r5_ATAC'): 
+        table_r5 = [x.strip() for x in open(dirt+'/r5_ATAC').readlines()]
     else:
-        sys.exit("error(main): r5 file not exists")
+        sys.exit("error(main): r5_ATAC file not exists")
         
     if len(table_r7) == 0: sys.exit("error(main): r7 table has 0 elements")
     if len(table_i7) == 0: sys.exit("error(main): i7 table has 0 elements")

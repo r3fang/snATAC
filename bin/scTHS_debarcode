@@ -10,7 +10,7 @@ import optparse
 def main():
     """ main function """
     parser = optparse.OptionParser(usage='%prog [-h] [-a I1.fastq] [-b I2.fastq] [-c R1.fastq]',
-                                   description='Decomplex single-cell ATAC-seq barcode allowing mismatch.')
+                                   description='Decomplex single-cell THS-seq barcode allowing mismatch.')
     parser.add_option('-a',
                       dest="I1",
                       help='I1.fastq.gz'

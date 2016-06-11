@@ -8,8 +8,8 @@ import os.path
 import optparse
 
 def main():
-     """ main function """
-    parser = optparse.OptionParser(usage='%prog [-h] [-a I1.fastq] [-b I2.fastq] [-c R1.fastq] [-d R2.fastq]',
+    """ main function """
+    parser = optparse.OptionParser(usage='%prog [-h] [-a I1.fastq] [-b I2.fastq] [-c R1.fastq]',
                                    description='Decomplex single-cell ATAC-seq barcode allowing mismatch.')
     parser.add_option('-a',
                       dest="I1",
@@ -26,18 +26,13 @@ def main():
                       help='R1.fastq.gz'
                       )
 
-    parser.add_option('-d',
-                      dest='R2',
-                      help='R2.fastq.gz'
-                      )
-
     parser.add_option('--version',
                       dest="version",
                       default=1.0,
                       type="float",
                       )
 
-    if len(sys.argv) < 10:
+    if len(sys.argv) < 6:
         parser.print_help()
         exit('error: too few arguments')
 
@@ -46,19 +41,15 @@ def main():
     fi1_name = args.I1
     fi2_name = args.I2
     fr1_name = args.R1
-    fr2_name = args.R2
     
-    # report the error
     if not os.path.isfile(fi1_name): exit("error: \'%s\' not exist" % fi1_name)
     if not os.path.isfile(fi2_name): exit("error: \'%s\' not exist" % fi2_name)
     if not os.path.isfile(fr1_name): exit("error: \'%s\' not exist" % fr1_name)
-    if not os.path.isfile(fr2_name): exit("error: \'%s\' not exist" % fr2_name)
     
     fi1 = gzip.open(fi1_name, 'rb')
     fi2 = gzip.open(fi2_name, 'rb')
     fr1 = gzip.open(fr1_name, 'rb')
-    fr2 = gzip.open(fr2_name, 'rb')
-            
+    
     while True:
         cur_i1_name = fi1.readline().strip()[1:]
         cur_i1_read = fi1.readline().strip()
@@ -74,30 +65,23 @@ def main():
         cur_r1_read = fr1.readline().strip()
         cur_r1_plus = fr1.readline().strip()
         cur_r1_qual = fr1.readline().strip()
-    
-        cur_r2_name = fr2.readline().strip()[1:]
-        cur_r2_read = fr2.readline().strip()
-        cur_r2_plus = fr2.readline().strip()
-        cur_r2_qual = fr2.readline().strip()
-        
-        if cur_i1_name == "" or cur_i2_name == "" or cur_r1_name == "" or cur_r2_name == "": break
-        if not (cur_i1_name.split()[0] == cur_i2_name.split()[0] == cur_r1_name.split()[0]  == cur_r2_name.split()[0]): sys.exit("error(main): read name not matched")        
+            
+        if cur_i1_name == "" or cur_i2_name == "" or cur_r1_name == "": break
+        if not (cur_i1_name.split()[0] == cur_i2_name.split()[0] == cur_r1_name.split()[0]): sys.exit("error(main): read name not matched")        
+
         cur_r7 = cur_i1_read[:8]
         cur_i7 = cur_i1_read[-8:]
         cur_i5 = cur_i2_read[:8]
         cur_r5 = cur_i2_read[-8:]        
+        
         cur_barcode = cur_r7 + cur_i7 + cur_i5 + cur_r5
         if cur_barcode.count('N') >= 12: continue
-        
+
         try:
             print '@' + cur_barcode + ':' + cur_r1_name
             print cur_r1_read
             print '+'
             print cur_r1_qual
-            print '@' + cur_barcode + ':' + cur_r2_name
-            print cur_r2_read
-            print '+'
-            print cur_r2_qual
         except IOError:
             try:
                 sys.stdout.close()
@@ -111,7 +95,6 @@ def main():
     fi1.close()
     fi2.close()
     fr1.close()
-    fr2.close()
 
 if __name__ == '__main__':
     main()

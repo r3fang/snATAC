@@ -165,7 +165,7 @@ fi
 mkdir $PREFIX\_tmp
 
 echo 'Step 1. decomplex scTHS-seq data followed by mapping and filtering poorly mapped reads;'
-bwa mem -M -t 5 $GENOME <(scTHS_debarcode -a $I1 -b $I2 -c $FASTQ) \
+bwa mem -M -t $THREADS $GENOME <(scTHS_debarcode -a $I1 -b $I2 -c $FASTQ) \
 | samtools view -q 10 -bS - > $PREFIX\_tmp/$PREFIX.umap.bam
 
 echo 'Step 2. correct barcode error by allowing given mismatches;'
