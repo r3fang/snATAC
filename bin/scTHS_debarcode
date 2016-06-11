@@ -72,6 +72,7 @@ def main():
         
         cur_i7 = cur_i1_read[:8]
         cur_i5 = cur_i2_read[:8]
+        # !!!!!!!! not the last 6 base !!!!!!
         cur_r5 = cur_i2_read[-9:-3]
         
         cur_barcode = cur_i7 + cur_i5 + cur_r5

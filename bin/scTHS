@@ -214,7 +214,7 @@ samtools view -h $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.bam \
 echo 'Step 9. sort by genomic coordinates'
 samtools sort -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted
 
-echo 'Step 10. summerizing'
+echo 'Step 10. summerize'
 TOTAL_READS=$(zcat $FASTQ | wc -l | awk '{print $1}')
 UNIQ_READS=$(samtools view $PREFIX\_tmp/$PREFIX.umap.bam | wc -l | awk '{print $1}')
 BARCODE_CORRECTED_READS=$(samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.bam | wc -l | awk '{print $1}')
@@ -223,6 +223,7 @@ AFTER_PICARD_READS=$(samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.n
 TOTAL_CELLS=$(awk -v cutoff="$MIN_READ" '{if ($2 > cutoff) print }' $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.stat | wc -l | awk '{print $1}')
 FINAL_READS=$(samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted.bam | wc -l | awk '{print $1}')
 
+echo 'Step 10. clean up'
 echo "================================ Summary =================================="
 echo "Total number of raw reads: $((TOTAL_READS/4))"
 echo "Uniquely mapped reads (MAPQ>10): $UNIQ_READS"
@@ -245,6 +246,5 @@ END{
     print "Max number of reads for selected cells: "max(a)
 }'
 
-echo 'Step 11. cleaning up'
-mv $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted.bam .
+mv $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted.bam $PREFIX.bam
 rm -r $PREFIX\_tmp
