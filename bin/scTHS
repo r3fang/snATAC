@@ -18,7 +18,8 @@ Version: 06.11.2016
 Contact: Rongxin Fang <r3fang@ucsd.edu>
 Ren Lab: http://bioinformatics-renlab.ucsd.edu/rentrac/
 
-Step 1. decomplex scTHS-seq data followed by mapping and filtering poorly mapped reads;
+Step 0. decomplex scATAC-seq data [OPTIONA];
+Step 1. map and filter poorly mapped reads;
 Step 2. correct barcode error by allowing given mismatches;
 Step 3. split reads to individual cells based on the barcode combination;
 Step 4. remove PCR duplication for each cell;
@@ -27,23 +28,26 @@ Step 7. generate barcode frequency table;
 Step 8. filter cells with reads counts less than given cutoff;
 Step 9. summerize and generate a log file;
 
-usage: ${0##*/} [-h] [-t THREADS] [-o I1] [-i I2] [-f FASTQ] [-b BARCODE_DIR] [-d MAX_BARCODE_MISMATCH][-p MarkDuplicates.jar] [-n PREFIX] [-g BWA_GENOME] [-m MIN_READ] 
+usage: ${0##*/} [-h] [-t THREADS] [-f R1] [-b BARCODE_DIR] [-d MAX_BARCODE_MISMATCH][-p MarkDuplicates.jar] [-n PREFIX] [-g BWA_GENOME] [-m MIN_READ] 
 
 Example:
-scTHS -t 2 -o demo_I1.fastq.gz -i demo_I2.fastq.gz -f demo_R1.fastq.gz -b barcodes -d 2 -p Picard/MarkDuplicates.jar -n demo -g hg19.fa -m 500 
+scTHS -t 2 -f demo_R1.fastq.gz -b barcodes -d 2 -p Picard/MarkDuplicates.jar -n demo -g hg19.fa -m 500 
 
 Options:    
-	-h, --help			show this help message and exit.
-	-t  THREADS			threads [1].
-	-o  I1				fastq file that contains i7 barcode.
-	-i  I2				fastq file that contains r5 and i5 barcode.
-	-f  FASTQ			fastq file that contains sequnecing reads.
-	-b  BARCODE_DIR			folder that contains i7_THS, i5_THS and r5_THS barcode.
-	-d  MAX_BARCODE_MISMATCH	max barcode mismatch allowed [2].
-	-p  MARK_DUPLICATE  		path to picard MarkDuplicates.jar [MarkDuplicates.jar].
-	-n  PREFIX			prefix of output files.
-	-g  BWA_GENOME			BWA indexed reference genome.
-	-m  MIN_READ			cells with reads less than MIN_READ will be filtered.
+	-h, --help                  show this help message and exit.
+	-t  THREADS                 threads [1].
+	-f  R1                      fastq.gz file that contains sequnecing reads.
+	-b  BARCODE_DIR             folder that contains i7_THS, i5_THS and r5_THS barcode.
+	-d  MAX_BARCODE_MISMATCH    max barcode mismatch allowed [2].
+	-p  MARK_DUPLICATE          path to picard MarkDuplicates.jar [MarkDuplicates.jar].
+	-n  PREFIX                  prefix of output files.
+	-g  BWA_GENOME              BWA indexed reference genome.
+	-m  MIN_READ                cells with reads less than MIN_READ will be filtered.
+
+Note: To use scTHS, you need to first decomplex barcode combination and integrate barcode 
+      information as the beginning of the read name in R1 files. 
+      This can be done by command 'scATAC_debarcode': 
+      'scTHS_debarcode -a I1.fastq.gz -b I2.fastq.gz R1.fastq.gz | gzip - > R1.decomplex.fastq.gz'
 EOF
 } 
 
@@ -52,13 +56,11 @@ THREADS=1
 MAX_BARCODE_MISMATCH=2
 
 # PART IV receiving arguments
-while getopts ":t:o:i:f:r:b:d:p:n:g:m:" opt;
+while getopts ":t:f:r:b:d:p:n:g:m:" opt;
 do
 	case "$opt" in
 		t) THREADS=$OPTARG;;
-		o) I1=$OPTARG;;
-		i) I2=$OPTARG;;		
-		f) FASTQ=$OPTARG;;
+		f) R1=$OPTARG;;
 		b) BARCODE_DIR=$OPTARG;;
 		d) MAX_BARCODE_MISMATCH=$OPTARG;;
 		p) MARK_DUPLICATE=$OPTARG;;
@@ -79,21 +81,9 @@ if [ $# -lt 10 ] ; then
 fi
 
 # check if files exist
-if [ ! -f $I1 ]; then
+if [ ! -f $R1 ]; then
 	usage
-    echo "error: '$I1' not exists.";
-	exit 1
-fi
-
-if [ ! -f $I2 ]; then
-	usage
-    echo "error: '$I2' not exists.";
-	exit 1
-fi
-
-if [ ! -f $FASTQ ]; then
-	usage
-    echo "error: '$FASTQ' not exists.";
+    echo "error: '$R1' not exists.";
 	exit 1
 fi
 
@@ -147,9 +137,7 @@ fi
 echo $0 $*
 echo 
 echo THREADS=$THREADS
-echo I1=$I1
-echo I2=$I2
-echo FASTQ=$FASTQ
+echo R1=$R1
 echo BARCODE_DIR=$BARCODE_DIR
 echo MAX_BARCODE_MISMATCH=$MAX_BARCODE_MISMATCH
 echo MARK_DUPLICATE=$MARK_DUPLICATE
@@ -165,7 +153,7 @@ fi
 mkdir $PREFIX\_tmp
 
 echo 'Step 1. decomplex scTHS-seq data followed by mapping and filtering poorly mapped reads;'
-bwa mem -M -t $THREADS $GENOME <(scTHS_debarcode -a $I1 -b $I2 -c $FASTQ) \
+bwa mem -M -t $THREADS $GENOME $R1 \
 | samtools view -q 10 -bS - > $PREFIX\_tmp/$PREFIX.umap.bam
 
 echo 'Step 2. correct barcode error by allowing given mismatches;'
@@ -215,7 +203,7 @@ echo 'Step 9. sort by genomic coordinates'
 samtools sort -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted
 
 echo 'Step 10. summerize'
-TOTAL_READS=$(zcat $FASTQ | wc -l | awk '{print $1}')
+TOTAL_READS=$(zcat $R1 | wc -l | awk '{print $1}')
 UNIQ_READS=$(samtools view $PREFIX\_tmp/$PREFIX.umap.bam | wc -l | awk '{print $1}')
 BARCODE_CORRECTED_READS=$(samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.bam | wc -l | awk '{print $1}')
 BEFORE_PICARD_READS=$(samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.bam | wc -l | awk '{print $1}')
