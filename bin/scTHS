@@ -179,11 +179,12 @@ echo 'Step 5. remove PCR duplication for each cell;'
 for line in `ls $PREFIX\_tmp/cells | grep .sam`
 do
 	barcode="${line%.*}"
-	cat $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.header $PREFIX\_tmp/cells/$line \
-	| samtools view -bS - \
-	| samtools sort - $PREFIX\_tmp/cells/$barcode.sorted \
-	| java -Xmx2G -jar $MARK_DUPLICATE INPUT=$PREFIX\_tmp/cells/$barcode.sorted.bam OUTPUT=$PREFIX\_tmp/cells/$barcode.sorted.filtered.bam ASSUME_SORTED=true \
+	cat $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.header $PREFIX\_tmp/cells/$line | samtools view -bS - \
+	| samtools sort - $PREFIX\_tmp/cells/$barcode.sorted
+	java -Xmx2G -jar $MARK_DUPLICATE INPUT=$PREFIX\_tmp/cells/$barcode.sorted.bam OUTPUT=$PREFIX\_tmp/cells/$barcode.sorted.filtered.bam ASSUME_SORTED=true \
 		REMOVE_DUPLICATES=true VALIDATION_STRINGENCY=LENIENT METRICS_FILE=$PREFIX\_tmp/cells/metrics.$barcode.txt TMP_DIR=$PREFIX\_tmp/cells/$barcode\_tmp
+	rm $PREFIX\_tmp/cells/$barcode.sorted.bam
+	rm -r $PREFIX\_tmp/cells/$barcode\_tmp
 done
 
 echo 'Step 6. merge reads from different cells to a single file;'
