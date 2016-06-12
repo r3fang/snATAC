@@ -8,6 +8,7 @@ command -v scATAC_barcode_err_correct >/dev/null 2>&1 || { echo >&2 "scATAC requ
 command -v scATAC_decell >/dev/null 2>&1 || { echo >&2 "scATAC requires scATAC_decell but it is not installed. Aborting."; exit 1; }
 command -v scATAC_rm_cell_with_low_cov >/dev/null 2>&1 || { echo >&2 "scATAC requires scATAC_rm_cell_with_low_cov but it is not installed. Aborting."; exit 1; }
 command -v scATAC_debarcode >/dev/null 2>&1 || { echo >&2 "scATAC requires scATAC_debarcode but it is not installed. Aborting."; exit 1; }
+
 # PART II usage info
 usage(){
 cat << EOF
@@ -191,7 +192,7 @@ do
 	barcode="${line%.*}"
 	samtools view -bS $PREFIX\_tmp/cells/$barcode.sam \
 	| samtools sort - $PREFIX\_tmp/cells/$barcode.sorted
-	java -Xmx2G -jar $MARK_DUPLICATE INPUT=$PREFIX\_tmp/cells/$barcode.sorted.bam OUTPUT=$PREFIX\_tmp/cells/$barcode.sorted.filtered.bam ASSUME_SORTED=true \
+	java -Xmx1G -jar $MARK_DUPLICATE INPUT=$PREFIX\_tmp/cells/$barcode.sorted.bam OUTPUT=$PREFIX\_tmp/cells/$barcode.sorted.filtered.bam ASSUME_SORTED=true \
 		REMOVE_DUPLICATES=true VALIDATION_STRINGENCY=LENIENT METRICS_FILE=$PREFIX\_tmp/cells/metrics.$barcode.txt TMP_DIR=$PREFIX\_tmp/cells/$barcode\_tmp
 	rm -r $PREFIX\_tmp/cells/$barcode\_tmp
 	rm $PREFIX\_tmp/cells/$barcode.sam
