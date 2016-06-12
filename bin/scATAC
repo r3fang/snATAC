@@ -8,7 +8,6 @@ command -v scATAC_barcode_err_correct >/dev/null 2>&1 || { echo >&2 "scATAC requ
 command -v scATAC_decell >/dev/null 2>&1 || { echo >&2 "scATAC requires scATAC_decell but it is not installed. Aborting."; exit 1; }
 command -v scATAC_rm_cell_with_low_cov >/dev/null 2>&1 || { echo >&2 "scATAC requires scATAC_rm_cell_with_low_cov but it is not installed. Aborting."; exit 1; }
 command -v scATAC_debarcode >/dev/null 2>&1 || { echo >&2 "scATAC requires scATAC_debarcode but it is not installed. Aborting."; exit 1; }
-
 # PART II usage info
 usage(){
 cat << EOF
@@ -163,46 +162,45 @@ echo GENOME=$GENOME
 echo MIN_READ=$MIN_READ
 echo 
 
-#if [ -d $PREFIX\_tmp ]; then
-#	rm -r $PREFIX\_tmp
-#fi
-#mkdir $PREFIX\_tmp
+if [ -d $PREFIX\_tmp ]; then
+	rm -r $PREFIX\_tmp
+fi
+mkdir $PREFIX\_tmp
 
 echo "Step 1. map using bwa followed by filtering reads with MAPQ < 10;"
-#bwa mem -M -t $THREADS $GENOME $R1 $R2 \
-#| samtools view -q 10 -bS - > $PREFIX\_tmp/$PREFIX.umap.bam
+bwa mem -M -t $THREADS $GENOME $R1 $R2 \
+| samtools view -q 10 -bS - > $PREFIX\_tmp/$PREFIX.umap.bam
 
 echo "Step 2. correct barcode error by allowing $MAX_BARCODE_MISMATCH mismatches;"
-#samtools view -h $PREFIX\_tmp/$PREFIX.umap.bam \
-#| scATAC_barcode_err_correct $MAX_BARCODE_MISMATCH $BARCODE_DIR \
-#| samtools view -bS - > $PREFIX\_tmp/$PREFIX.umap.corrected.bam
+samtools view -h $PREFIX\_tmp/$PREFIX.umap.bam \
+| scATAC_barcode_err_correct $MAX_BARCODE_MISMATCH $BARCODE_DIR \
+| samtools view -bS - > $PREFIX\_tmp/$PREFIX.umap.corrected.bam
 
 echo "Step 3. split reads to individual cells based on the barcode combination;"
-#samtools sort -n -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted
+samtools sort -n -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted
 if [ -d $PREFIX\_tmp/cells ]; then
 	rm -r $PREFIX\_tmp/cells
 fi
 mkdir $PREFIX\_tmp/cells # create a tmp folder
-samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.bam \
+samtools view -h $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.bam \
 | scATAC_decell $MIN_READ $PREFIX\_tmp/cells -
-
-samtools view -H $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.bam > $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.header
-cat $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.header $PREFIX\_tmp/cells/*.sam | samtools view -bS - > $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.bam
 
 echo 'Step 4. remove PCR duplication for each cell;'
 for line in `ls $PREFIX\_tmp/cells | grep .sam`
 do
 	barcode="${line%.*}"
-	cat $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.header $PREFIX\_tmp/cells/$line | samtools view -bS - \
+	samtools view -bS $PREFIX\_tmp/cells/$barcode.sam \
 	| samtools sort - $PREFIX\_tmp/cells/$barcode.sorted
 	java -Xmx2G -jar $MARK_DUPLICATE INPUT=$PREFIX\_tmp/cells/$barcode.sorted.bam OUTPUT=$PREFIX\_tmp/cells/$barcode.sorted.filtered.bam ASSUME_SORTED=true \
 		REMOVE_DUPLICATES=true VALIDATION_STRINGENCY=LENIENT METRICS_FILE=$PREFIX\_tmp/cells/metrics.$barcode.txt TMP_DIR=$PREFIX\_tmp/cells/$barcode\_tmp
-	rm $PREFIX\_tmp/cells/$barcode.sorted.bam
 	rm -r $PREFIX\_tmp/cells/$barcode\_tmp
+	rm $PREFIX\_tmp/cells/$barcode.sam
 done
 
 echo 'Step 5. merge reads from different cells to a single file;'
+samtools cat -o $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.bam $PREFIX\_tmp/cells/*.sorted.bam
 samtools cat -o $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.bam $PREFIX\_tmp/cells/*.sorted.filtered.bam
+rm -r $PREFIX\_tmp/cells/
 
 echo 'Step 6. generate barcode frequency;'
 samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.bam \
