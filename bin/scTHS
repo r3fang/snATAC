@@ -47,7 +47,7 @@ Options:
 Note: To use scTHS, you need to first decomplex barcode combination and integrate barcode 
       information as the beginning of the read name in R1 files. 
       This can be done by command 'scATAC_debarcode': 
-      'scTHS_debarcode -a I1.fastq.gz -b I2.fastq.gz R1.fastq.gz | gzip - > R1.decomplex.fastq.gz'
+      'scTHS_debarcode -a I1.fastq.gz -b I2.fastq.gz -c R1.fastq.gz | gzip - > R1.decomplex.fastq.gz'
 EOF
 } 
 

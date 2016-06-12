@@ -48,8 +48,8 @@ Options:
 Note: To use scATAC, you need to first decomplex barcode combination and integrate barcode 
       information as the beginning of the read name in R1 and R2 files. 
       This can be done by command 'scATAC_debarcode': 
-      'scATAC_debarcode -a I1.fastq.gz -b I2.fastq.gz R1.fastq.gz | gzip - > R1.decomplex.fastq.gz'
-      'scATAC_debarcode -a I1.fastq.gz -b I2.fastq.gz R2.fastq.gz | gzip - > R2.decomplex.fastq.gz' 
+      'scATAC_debarcode -a I1.fastq.gz -b I2.fastq.gz -c R1.fastq.gz | gzip - > R1.decomplex.fastq.gz'
+      'scATAC_debarcode -a I1.fastq.gz -b I2.fastq.gz -c R2.fastq.gz | gzip - > R2.decomplex.fastq.gz' 
 EOF
 } 
 
@@ -166,7 +166,7 @@ if [ -d $PREFIX\_tmp ]; then
 fi
 mkdir $PREFIX\_tmp
 
-echo 'Step 1. decomplex scATAC-seq data followed by mapping and filtering poorly mapped reads;'
+echo 'Step 1. map and filter poorly mapped reads;'
 bwa mem -M -t $THREADS $GENOME $R1 $R2 \
 | samtools view -q 10 -bS - > $PREFIX\_tmp/$PREFIX.umap.bam
 
