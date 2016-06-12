@@ -147,22 +147,22 @@ echo MIN_READ=$MIN_READ
 echo 
 
 
-if [ -d $PREFIX\_tmp ]; then
-	rm -r $PREFIX\_tmp
-fi
-mkdir $PREFIX\_tmp
+#if [ -d $PREFIX\_tmp ]; then
+#	rm -r $PREFIX\_tmp
+#fi
+#mkdir $PREFIX\_tmp
 
 echo 'Step 1. decomplex scTHS-seq data followed by mapping and filtering poorly mapped reads;'
-bwa mem -M -t $THREADS $GENOME $R1 \
-| samtools view -q 10 -bS - > $PREFIX\_tmp/$PREFIX.umap.bam
+#bwa mem -M -t $THREADS $GENOME $R1 \
+#| samtools view -q 10 -bS - > $PREFIX\_tmp/$PREFIX.umap.bam
 
 echo 'Step 2. correct barcode error by allowing given mismatches;'
-samtools view -h $PREFIX\_tmp/$PREFIX.umap.bam \
-| scTHS_barcode_err_correct $MAX_BARCODE_MISMATCH $BARCODE_DIR \
-| samtools view -bS - > $PREFIX\_tmp/$PREFIX.umap.corrected.bam
+#samtools view -h $PREFIX\_tmp/$PREFIX.umap.bam \
+#| scTHS_barcode_err_correct $MAX_BARCODE_MISMATCH $BARCODE_DIR \
+#| samtools view -bS - > $PREFIX\_tmp/$PREFIX.umap.corrected.bam
 
 echo 'Step 3. sort reads based on barcode in prepare for reads split;'
-samtools sort -n -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted
+#samtools sort -n -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted
 
 echo 'Step 4. split reads to individual cells based on the barcode combination;' 
 if [ -d $PREFIX\_tmp/cells ]; then
