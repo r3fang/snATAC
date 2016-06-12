@@ -6,7 +6,7 @@ $ chmod u+x bin/*
 $ export PATH=$PATH:./bin/ #(see below how to add to path permanently)
 $ scATAC_debarcode -a data/demo_ATAC.I1.gz -b data/demo_ATAC.I2.gz -c data/demo_ATAC.R1.gz | gzip - > demo_ATAC.decomplex.R1.fastq.gz
 $ scATAC_debarcode -a data/demo_ATAC.I1.gz -b data/demo_ATAC.I2.gz -c data/demo_ATAC.R2.gz | gzip - > demo_ATAC.decomplex.R2.fastq.gz
-$ scATAC -t 2 -f demo_ATAC.decomplex.R1.fastq.gz -r demo_ATAC.decomplex.R2.fastq.gz -b ./barcodes -d 2 -p Picard/MarkDuplicates.jar -n demo_ATAC -g hg19.fa -m 500
+$ scATAC -t 2 -f demo_ATAC.decomplex.R1.fastq.gz -r demo_ATAC.decomplex.R2.fastq.gz -b ./barcodes -d 2 -p Picard/MarkDuplicates.jar -n demo_ATAC -g hg19.fa -m 500 > demo_ATAC.log
 ```
 
 ##Introduction
