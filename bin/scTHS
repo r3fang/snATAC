@@ -210,12 +210,14 @@ BEFORE_PICARD_READS=$(samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.
 AFTER_PICARD_READS=$(samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.bam | wc -l | awk '{print $1}')
 TOTAL_CELLS=$(awk -v cutoff="$MIN_READ" '{if ($2 > cutoff) print }' $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.stat | wc -l | awk '{print $1}')
 FINAL_READS=$(samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted.bam | wc -l | awk '{print $1}')
+TOTAL_BARCODE=$(samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.bam | awk '{split($1,a,":"); print a[1]}' | sort | uniq -c | wc -l | awk '{print $1}')
 
-echo 'Step 10. clean up'
+echo 'Step 10. clean up;'
 echo "================================ Summary =================================="
-echo "Total number of raw reads: $((TOTAL_READS/4))"
-echo "Uniquely mapped reads (MAPQ>10): $UNIQ_READS"
-echo "Reads lfte after barcode correction: $BARCODE_CORRECTED_READS"
+echo "Total number of raw reads: $((TOTAL_READS/2))"
+echo "Uniquely mapped reads (MAPQ>=10): $UNIQ_READS"
+echo "Reads left after barcode correction: $BARCODE_CORRECTED_READS"
+echo "Uniquely barcode combinations: $TOTAL_BARCODE"
 echo "Estimated PCR duplication rate: $(echo "scale=2; ($BEFORE_PICARD_READS - $AFTER_PICARD_READS) / $BEFORE_PICARD_READS * 100"| bc -l)%"
 echo "Total number of reads left: $FINAL_READS"
 echo "Number of cells with more than $MIN_READ reads: $TOTAL_CELLS"
