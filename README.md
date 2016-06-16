@@ -58,15 +58,15 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
 ##Pipeline
 
 **scATAC** is made of following steps:
-Step 0. decomplex scATAC-seq data by scATAC_debarcode [OPTIONAL];
-Step 1. map using bwa followed by filtering reads with MAPQ < 10;
-Step 2. correct barcode error caused by sequencing error by allowing certain number of mismatches [2];
-Step 3. split reads to individual cells based on the barcode combination;
-Step 4. remove PCR duplication for each cell;
-Step 6. merge reads from different cells;
-Step 7. generate barcode frequency table;
-Step 8. filter cells with reads counts less than given number [500];
-Step 9. summerize and generate a log file;
+0.	decomplex scATAC-seq data by scATAC_debarcode [OPTIONAL];
+1.	map using bwa followed by filtering reads with MAPQ < 10;
+2.	correct barcode error caused by sequencing error by allowing certain number of mismatches [2];
+3.	split reads to individual cells based on the barcode combination;
+4.	remove PCR duplication for each cell;
+6.	merge reads from different cells;
+7.	generate barcode frequency table;
+8.	filter cells with reads counts less than given number [500];
+9.	summerize and generate a log file;
 
 ##Output
 **scATAC** generates two files '.log' and '.bam'. 
