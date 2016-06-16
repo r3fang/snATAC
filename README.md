@@ -58,6 +58,7 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
 ##Pipeline
 
 **scATAC** is made of following steps:
+
 0. decomplex scATAC-seq data by scATAC_debarcode [OPTIONAL];
 1. map using bwa followed by filtering reads with MAPQ < 10;
 2. correct barcode error caused by sequencing error by allowing certain number of mismatches [2];
