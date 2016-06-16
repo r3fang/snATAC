@@ -252,4 +252,4 @@ END{
 }'
 
 mv $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted.bam $PREFIX.bam
-#rm -r $PREFIX\_tmp
+rm -r $PREFIX\_tmp
