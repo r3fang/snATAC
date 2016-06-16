@@ -18,16 +18,6 @@ Version: 06.11.2016
 Contact: Rongxin Fang <r3fang@ucsd.edu>
 Ren Lab: http://bioinformatics-renlab.ucsd.edu/rentrac/
 
-Step 0. decomplex scATAC-seq data [OPTIONA];
-Step 1. map using bwa followed by filtering reads with MAPQ < 10;
-Step 2. correct barcode error caused by sequencing error by allowing certain number of mismatches [2];
-Step 3. split reads to individual cells based on the barcode combination;
-Step 4. remove PCR duplication for each cell;
-Step 6. merge reads from different cells;
-Step 7. generate barcode frequency table;
-Step 8. filter cells with reads counts less than given number [500];
-Step 9. summerize and generate a log file;
-
 usage: ${0##*/} [-h] [-t THREADS] [-f R1] [-b BARCODE_DIR] [-d MAX_BARCODE_MISMATCH][-p MarkDuplicates.jar] [-n PREFIX] [-g BWA_GENOME] [-m MIN_READ] 
 
 Example:

@@ -18,16 +18,6 @@ Version: 06.10.2016
 Contact: Rongxin Fang <r3fang@ucsd.edu>
 Ren Lab: http://bioinformatics-renlab.ucsd.edu/rentrac/
 
-Step 0. decomplex scATAC-seq data by scATAC_debarcode [OPTIONAL];
-Step 1. map using bwa followed by filtering reads with MAPQ < 10;
-Step 2. correct barcode error caused by sequencing error by allowing certain number of mismatches [2];
-Step 3. split reads to individual cells based on the barcode combination;
-Step 4. remove PCR duplication for each cell;
-Step 6. merge reads from different cells;
-Step 7. generate barcode frequency table;
-Step 8. filter cells with reads counts less than given number [500];
-Step 9. summerize and generate a log file;
-
 usage: ${0##*/} [-h] [-t THREADS] [-f R1] [-r R2] [-b BARCODE_DIR] [-d MAX_BARCODE_MISMATCH] [-p MarkDuplicates.jar] [-n PREFIX] [-g BWA_GENOME] [-m MIN_READ]  
 
 Example:
@@ -150,34 +140,34 @@ if ! [[ $MIN_READ =~ $re ]] ; then
    exit 1
 fi
 
-echo $0 $*
-echo 
-echo THREADS=$THREADS
-echo R1=$R1
-echo R2=$R2
-echo BARCODE_DIR=$BARCODE_DIR
-echo MAX_BARCODE_MISMATCH=$MAX_BARCODE_MISMATCH
-echo MARK_DUPLICATE=$MARK_DUPLICATE
-echo PREFIX=$PREFIX
-echo GENOME=$GENOME
-echo MIN_READ=$MIN_READ
-echo 
+echo $0 $* 2>&1 | tee $PREFIX.log 
+echo 2>&1 | tee -a $PREFIX.log
+echo THREADS=$THREADS 2>&1 | tee -a $PREFIX.log
+echo R1=$R1 2>&1 | tee -a $PREFIX.log
+echo R2=$R2 2>&1 | tee -a $PREFIX.log
+echo BARCODE_DIR=$BARCODE_DIR 2>&1 | tee -a $PREFIX.log
+echo MAX_BARCODE_MISMATCH=$MAX_BARCODE_MISMATCH 2>&1 | tee -a $PREFIX.log
+echo MARK_DUPLICATE=$MARK_DUPLICATE 2>&1 | tee -a $PREFIX.log
+echo PREFIX=$PREFIX 2>&1 | tee -a $PREFIX.log
+echo GENOME=$GENOME 2>&1 | tee -a $PREFIX.log
+echo MIN_READ=$MIN_READ 2>&1 | tee -a $PREFIX.log
+echo 2>&1 | tee -a $PREFIX.log
 
 if [ -d $PREFIX\_tmp ]; then
 	rm -r $PREFIX\_tmp
 fi
 mkdir $PREFIX\_tmp
 
-echo "Step 1. map using bwa followed by filtering reads with MAPQ < 10;"
+echo "Step 1. map using bwa followed by filtering reads with MAPQ < 10;" 2>&1 | tee -a $PREFIX.log
 bwa mem -M -t $THREADS $GENOME $R1 $R2 \
 | samtools view -q 10 -bS - > $PREFIX\_tmp/$PREFIX.umap.bam
 
-echo "Step 2. correct barcode error by allowing $MAX_BARCODE_MISMATCH mismatches;"
+echo "Step 2. correct barcode error by allowing $MAX_BARCODE_MISMATCH mismatches;" 2>&1 | tee -a $PREFIX.log
 samtools view -h $PREFIX\_tmp/$PREFIX.umap.bam \
 | scATAC_barcode_err_correct $MAX_BARCODE_MISMATCH $BARCODE_DIR \
 | samtools view -bS - > $PREFIX\_tmp/$PREFIX.umap.corrected.bam
 
-echo "Step 3. split reads to individual cells based on the barcode combination;"
+echo "Step 3. split reads to individual cells based on the barcode combination;" 2>&1 | tee -a $PREFIX.log
 samtools sort -n -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted
 if [ -d $PREFIX\_tmp/cells ]; then
 	rm -r $PREFIX\_tmp/cells
@@ -186,7 +176,7 @@ mkdir $PREFIX\_tmp/cells # create a tmp folder
 samtools view -h $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.bam \
 | scATAC_decell $MIN_READ $PREFIX\_tmp/cells -
 
-echo 'Step 4. remove PCR duplication for each cell;'
+echo 'Step 4. remove PCR duplication for each cell;' 2>&1 | tee -a $PREFIX.log
 for line in `ls $PREFIX\_tmp/cells | grep .sam`
 do
 	barcode="${line%.*}"
@@ -198,25 +188,25 @@ do
 	rm $PREFIX\_tmp/cells/$barcode.sam
 done
 
-echo 'Step 5. merge reads from different cells to a single file;'
+echo 'Step 5. merge reads from different cells to a single file;' 2>&1 | tee -a $PREFIX.log
 samtools cat -o $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.bam $PREFIX\_tmp/cells/*.sorted.bam
 samtools cat -o $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.bam $PREFIX\_tmp/cells/*.sorted.filtered.bam
 rm -r $PREFIX\_tmp/cells/
 
-echo 'Step 6. generate barcode frequency;'
+echo 'Step 6. generate barcode frequency;' 2>&1 | tee -a $PREFIX.log
 samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.bam \
 | awk '{split($1,a,":"); print a[1]}' | sort | uniq -c | awk '{print $2, $1}' \
 | sort -k2rn - > $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.stat 
 
-echo "Step 7. filter cells with low reads less than $MIN_READ reads;"
+echo "Step 7. filter cells with low reads less than $MIN_READ reads;" 2>&1 | tee -a $PREFIX.log
 samtools view -h $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.bam \
 | scATAC_rm_cell_with_low_cov $MIN_READ $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.stat - \
 | samtools view -bS - > $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.bam
 
-echo 'Step 8. sort by genomic coordinates;'
+echo 'Step 8. sort by genomic coordinates;' 2>&1 | tee -a $PREFIX.log
 samtools sort -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted
 
-echo 'Step 9. summerize;'
+echo 'Step 9. summerize;' 2>&1 | tee -a $PREFIX.log
 TOTAL_READS=$(zcat $R1 | wc -l | awk '{print $1}')
 UNIQ_READS=$(samtools view $PREFIX\_tmp/$PREFIX.umap.bam | wc -l | awk '{print $1}')
 BARCODE_CORRECTED_READS=$(samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.bam | wc -l | awk '{print $1}')
@@ -226,15 +216,15 @@ TOTAL_CELLS=$(awk -v cutoff="$MIN_READ" '{if ($2 > cutoff) print }' $PREFIX\_tmp
 FINAL_READS=$(samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted.bam | wc -l | awk '{print $1}')
 TOTAL_BARCODE=$(samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.bam | awk '{split($1,a,":"); print a[1]}' | sort | uniq -c | wc -l | awk '{print $1}')
 
-echo 'Step 10. clean up;'
-echo "================================ Summary =================================="
-echo "Total number of raw reads: $((TOTAL_READS/2))"
-echo "Uniquely mapped reads (MAPQ>=10): $UNIQ_READS"
-echo "Reads left after barcode correction: $BARCODE_CORRECTED_READS"
-echo "Uniquely barcode combinations: $TOTAL_BARCODE"
-echo "Estimated PCR duplication rate: $(echo "scale=2; ($BEFORE_PICARD_READS - $AFTER_PICARD_READS) / $BEFORE_PICARD_READS * 100"| bc -l)%"
-echo "Total number of reads left: $FINAL_READS"
-echo "Number of cells with more than $MIN_READ reads: $TOTAL_CELLS"
+echo 'Step 10. clean up;' 2>&1 | tee -a $PREFIX.log
+echo "================================ Summary ==================================" 2>&1 | tee -a $PREFIX.log
+echo "Total number of raw reads: $((TOTAL_READS/2))" 2>&1 | tee -a $PREFIX.log
+echo "Uniquely mapped reads (MAPQ>=10): $UNIQ_READS" 2>&1 | tee -a $PREFIX.log
+echo "Reads left after barcode correction: $BARCODE_CORRECTED_READS" 2>&1 | tee -a $PREFIX.log
+echo "Uniquely barcode combinations: $TOTAL_BARCODE" 2>&1 | tee -a $PREFIX.log
+echo "Estimated PCR duplication rate: $(echo "scale=2; ($BEFORE_PICARD_READS - $AFTER_PICARD_READS) / $BEFORE_PICARD_READS * 100"| bc -l)%" 2>&1 | tee -a $PREFIX.log
+echo "Total number of reads left: $FINAL_READS" 2>&1 | tee -a $PREFIX.log
+echo "Number of cells with more than $MIN_READ reads: $TOTAL_CELLS" 2>&1 | tee -a $PREFIX.log
 
 sort -k2,2n $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.stat \
 | awk -v cutoff="$MIN_READ" '{if ($2 > cutoff) print $2}' \
@@ -246,10 +236,10 @@ function min(x){i=max(x);for(val in x){if(i>x[val]){i=x[val];}}return i;}
      b[$1]++
 }
 END{
-	print "Min number of reads for selected cells: "min(a)
+	print "Min number of reads for selected cells: "min(a) 
     print "Median number of reads for selected cells: "a[int((x-1)/2)] 
     print "Max number of reads for selected cells: "max(a)
-}'
+}' 2>&1 | tee -a $PREFIX.log
 
 mv $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted.bam $PREFIX.bam
 rm -r $PREFIX\_tmp

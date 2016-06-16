@@ -3,10 +3,20 @@
 $ git clone https://github.com/r3fang/scATAC.git
 $ cd scATAC
 $ chmod u+x bin/*
-$ export PATH=$PATH:./bin/ #(see below how to add to path permanently)
-$ scATAC_debarcode -a data/demo_ATAC.I1.gz -b data/demo_ATAC.I2.gz -c data/demo_ATAC.R1.gz | gzip - > demo_ATAC.decomplex.R1.fastq.gz
-$ scATAC_debarcode -a data/demo_ATAC.I1.gz -b data/demo_ATAC.I2.gz -c data/demo_ATAC.R2.gz | gzip - > demo_ATAC.decomplex.R2.fastq.gz
-$ scATAC -t 2 -f demo_ATAC.decomplex.R1.fastq.gz -r demo_ATAC.decomplex.R2.fastq.gz -b ./barcodes -d 2 -p Picard/MarkDuplicates.jar -n demo_ATAC -g hg19.fa -m 500 > demo_ATAC.log
+$ export PATH=$PATH:./bin/ #(add this path to .bash_profile permanently)
+$ scATAC_debarcode -a data/demo_ATAC.I1.gz -b data/demo_ATAC.I2.gz -c data/demo_ATAC.R1.gz \
+	| gzip - > demo_ATAC.decomplex.R1.fastq.gz
+$ scATAC_debarcode -a data/demo_ATAC.I1.gz -b data/demo_ATAC.I2.gz -c data/demo_ATAC.R2.gz \
+	| gzip - > demo_ATAC.decomplex.R2.fastq.gz
+$ scATAC -t 2 \
+         -f demo_ATAC.decomplex.R1.fastq.gz \
+         -r demo_ATAC.decomplex.R2.fastq.gz \
+		 -b ./barcodes \
+		 -d 2 \
+		 -p Picard/MarkDuplicates.jar \
+		 -n demo_atac \
+		 -g hg19.fa \
+		 -m 500
 ```
 
 ##Introduction
@@ -44,5 +54,24 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
       'scATAC_debarcode -a I1.fastq.gz -b I2.fastq.gz -c R1.fastq.gz | gzip - > R1.decomplex.fastq.gz'
       'scATAC_debarcode -a I1.fastq.gz -b I2.fastq.gz -c R2.fastq.gz | gzip - > R2.decomplex.fastq.gz'
 ```
+
+##Pipeline
+
+**scATAC** is made of following steps:
+Step 0. decomplex scATAC-seq data by scATAC_debarcode [OPTIONAL];
+Step 1. map using bwa followed by filtering reads with MAPQ < 10;
+Step 2. correct barcode error caused by sequencing error by allowing certain number of mismatches [2];
+Step 3. split reads to individual cells based on the barcode combination;
+Step 4. remove PCR duplication for each cell;
+Step 6. merge reads from different cells;
+Step 7. generate barcode frequency table;
+Step 8. filter cells with reads counts less than given number [500];
+Step 9. summerize and generate a log file;
+
+##Output
+**scATAC** generates two files '.log' and '.bam'. 
+'.bam' is the final file that contains all usable reads and '.log' includes data metrics.
+
+ 
 
 
