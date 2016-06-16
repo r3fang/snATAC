@@ -5,9 +5,9 @@ $ cd scATAC
 $ chmod u+x bin/*
 $ export PATH=$PATH:./bin/ #(add this path to .bash_profile permanently)
 $ scATAC_debarcode -a data/demo_ATAC.I1.gz -b data/demo_ATAC.I2.gz -c data/demo_ATAC.R1.gz \
-	| gzip - > demo_ATAC.decomplex.R1.fastq.gz
+	     | gzip - > demo_ATAC.decomplex.R1.fastq.gz
 $ scATAC_debarcode -a data/demo_ATAC.I1.gz -b data/demo_ATAC.I2.gz -c data/demo_ATAC.R2.gz \
-	| gzip - > demo_ATAC.decomplex.R2.fastq.gz
+	     | gzip - > demo_ATAC.decomplex.R2.fastq.gz
 $ scATAC -t 2 \
          -f demo_ATAC.decomplex.R1.fastq.gz \
          -r demo_ATAC.decomplex.R2.fastq.gz \
@@ -58,15 +58,15 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
 ##Pipeline
 
 **scATAC** is made of following steps:
-0.	decomplex scATAC-seq data by scATAC_debarcode [OPTIONAL];
-1.	map using bwa followed by filtering reads with MAPQ < 10;
-2.	correct barcode error caused by sequencing error by allowing certain number of mismatches [2];
-3.	split reads to individual cells based on the barcode combination;
-4.	remove PCR duplication for each cell;
-6.	merge reads from different cells;
-7.	generate barcode frequency table;
-8.	filter cells with reads counts less than given number [500];
-9.	summerize and generate a log file;
+0. decomplex scATAC-seq data by scATAC_debarcode [OPTIONAL];
+1. map using bwa followed by filtering reads with MAPQ < 10;
+2. correct barcode error caused by sequencing error by allowing certain number of mismatches [2];
+3. split reads to individual cells based on the barcode combination;
+4. remove PCR duplication for each cell;
+6. merge reads from different cells;
+7. generate barcode frequency table;
+8. filter cells with reads counts less than given number [500];
+9. summerize and generate a log file;
 
 ##Output
 **scATAC** generates two files '.log' and '.bam'. 
