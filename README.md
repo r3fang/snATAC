@@ -18,6 +18,10 @@ $ scATAC -t 2 \
 		 -g hg19.fa \
 		 -m 500
 ```
+##Depedency
+- [bwa](https://github.com/lh3/bwa)
+- [samtools 1.2+](http://www.htslib.org/doc/samtools.html)
+- [Python 2.7+](https://www.python.org/download/releases/2.7/)
 
 ##Introduction
 
