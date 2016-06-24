@@ -80,18 +80,18 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
 ##FAQ
 
 
-1. **How to remove mitochondrial reads from BAM files?**
-```samtools index out.bam```
-```samtools idxstats out.bam \
+ 1. **How to remove mitochondrial reads from BAM files?**
+ ```samtools index out.bam```
+ ```samtools idxstats out.bam \
 	| cut -f 1 | grep -v chrM \
 	| xargs samtools view -b - > out.filtered.bam```
 
-2. **How to get barcode fequency if reads mapped to concatenated genome?**
-```samtools view out.bam \
+ 2. **How to get barcode fequency if reads mapped to concatenated genome?**
+ ```samtools view out.bam \
 	| awk '$3 ~ /mm9/ {split($1,a,":"); print a[1]}' \
 	| sort | uniq -c | awk '{print $2, $1}' \
 	| sort -k2rn - > out.mm9.barcode_freq.txt````
-```samtools view out.bam \
+ ```samtools view out.bam \
 	| awk '$3 ~ /hg19/ {split($1,a,":"); print a[1]}' \
 	| sort | uniq -c | awk '{print $2, $1}' \
 	| sort -k2rn - > out.hg19.barcode_freq.txt````
