@@ -84,7 +84,7 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
 
  ```bash
  $samtools index out.bam
- $samtools idxstats out.bam | cut -f 1 | grep -v chrM | xargs samtools view -b - > out.filtered.bam
+ $samtools idxstats out.bam | cut -f 1 | grep -v chrM | xargs samtools view -b out.bam - > out.filtered.bam
  ```
 
  2. **How to get barcode fequency if reads mapped to concatenated genome?**
@@ -96,6 +96,23 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
  # generate barcode frequency for hg19
  samtools view out.bam | awk '$3 ~ /hg19/ {split($1,a,":"); print a[1]}' \
  	| sort | uniq -c | awk '{print $2, $1}' | sort -k2rn - > out.hg19.barcode_freq.txt
+ ```
+
+ 3. **How to generate .bigWig files for given barcode(s)?**
+ 
+ ```bash
+ # generate barcode frequency for GAGATTCCAAGAGGCATATCCTCTCCTATCCT
+ samtools view out.bam | awk '{split($1,a,":"); if(a[1]=="GAGATTCCAAGAGGCATATCCTCTCCTATCCT") print} ' 
+ ```
+ 
+##Example
+
+ ```
+ # download sample data (GM12878 and HL60 mixture cell) from Cusanovich, Science, 2015
+ wget http://enhancer.sdsc.edu/r3fang/Cusanovich_2015/SRR1947693_1.fastq.gz
+ wget http://enhancer.sdsc.edu/r3fang/Cusanovich_2015/SRR1947693_2.fastq.gz
+ 
+ # 
  ```
 
 
