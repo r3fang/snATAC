@@ -84,7 +84,8 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
 
  ```bash
  $samtools index out.bam
- $samtools idxstats out.bam | cut -f 1 | grep -v chrM | xargs samtools view -b out.bam - > out.filtered.bam
+ $samtools idxstats out.bam | cut -f 1 | grep -v chrM \
+ 	| xargs samtools view -b out.bam > out.filtered.bam
  ```
 
  2. **How to get barcode fequency if reads mapped to concatenated genome?**
