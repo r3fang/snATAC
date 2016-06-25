@@ -80,53 +80,54 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
  
 ##Example
 
- ```
+```bash
  # download decomplexed sample data (human GM12878 and mouse ES mixture) from Cusanovich, Science, 2015
- wget http://enhancer.sdsc.edu/r3fang/Cusanovich_2015/SRR1947691_1.fastq.gz
- wget http://enhancer.sdsc.edu/r3fang/Cusanovich_2015/SRR1947691_2.fastq.gz
+ $ wget http://enhancer.sdsc.edu/r3fang/Cusanovich_2015/SRR1947691_1.fastq.gz
+ $ wget http://enhancer.sdsc.edu/r3fang/Cusanovich_2015/SRR1947691_2.fastq.gz
  
  # download BWA-indexed reference genome hg19-mm9 concatenated genome
- wget http://enhancer.sdsc.edu/r3fang/Cusanovich_2015/hg19_mm9_genome.tar.gz
- tar -xvzf hg19_mm9_genome.tar.gz
+ $ wget http://enhancer.sdsc.edu/r3fang/Cusanovich_2015/hg19_mm9_genome.tar.gz
+ $ tar -xvzf hg19_mm9_genome.tar.gz
  
  # map and analyze
- scATAC -t 5 -f SRR1947691_1.fastq.gz -r SRR1947691_2.fastq.gz -b barcodes/ -d 1 \
+ $ scATAC -t 5 -f SRR1947691_1.fastq.gz -r SRR1947691_2.fastq.gz -b barcodes/ -d 1 \
  -p Picard/MarkDuplicates.jar -n SRR1947691 -g hg19_mm9_genome/genome.fa -m 500 > SRR1947691.log
  
  # remove mitochondrial reads
- samtools index SRR1947691.bam
- samtools idxstats SRR1947691.bam | cut -f 1 | grep -v chrM \
+ $ samtools index SRR1947691.bam
+ $ samtools idxstats SRR1947691.bam | cut -f 1 | grep -v chrM \
  | xargs samtools view -bS SRR1947691.bam > SRR1947691.filtered.bam
  
  # split reads into human and mouse
- samtools view -h SRR1947691.filtered.bam \
+ $ samtools view -h SRR1947691.filtered.bam \
  | scATAC_split_genome hg19 \
  | samtools view -bS - >  SRR1947691.filtered.hg19.bam
 
- samtools view -h SRR1947691.filtered.bam \
+ $ samtools view -h SRR1947691.filtered.bam \
  | scATAC_split_genome mm9 \
  | samtools view -bS - >  SRR1947691.filtered.mm9.bam
 
  # convert bulk bam to bigWig file
- fetchChromSizes hg19 > hg19.chrom.sizes
- fetchChromSizes mm9 > mm9.chrom.sizes
+ $ fetchChromSizes hg19 > hg19.chrom.sizes
+ $ fetchChromSizes mm9 > mm9.chrom.sizes
  
- bamToBed -i SRR1947691.filtered.hg19.bam \
+ $ bamToBed -i SRR1947691.filtered.hg19.bam \
  | slopBed -s -l 0 -r 300 -i stdin -g hg19.chrom.sizes \
  | bedtools genomecov -g hg19.chrom.sizes -i stdin -bg \
  | sort -k1,1 -k2,2n - | wigToBigWig stdin hg19.chrom.sizes SRR1947691.filtered.hg19.bw 
 
- bamToBed -i SRR1947691.filtered.mm9.bam \
+ $ bamToBed -i SRR1947691.filtered.mm9.bam \
  | slopBed -s -l 0 -r 300 -i stdin -g mm9.chrom.sizes \
  | bedtools genomecov -g mm9.chrom.sizes -i stdin -bg \
  | sort -k1,1 -k2,2n - | wigToBigWig stdin mm9.chrom.sizes SRR1947691.filtered.mm9.bw 
  
  # generate barcode frequency
- samtools view SRR1947691.filtered.hg19.bam | awk '{split($1,a,":"); print a[1]}' \
+ $ samtools view SRR1947691.filtered.hg19.bam | awk '{split($1,a,":"); print a[1]}' \
  | sort | uniq -c | awk '{print $2, $1}' | sort -k2rn - > SRR1947691.filtered.hg19.barcode_freq.txt 
- samtools view SRR1947691.filtered.mm9.bam | awk '{split($1,a,":"); print a[1]}' \
+ 
+ $ samtools view SRR1947691.filtered.mm9.bam | awk '{split($1,a,":"); print a[1]}' \
  | sort | uniq -c | awk '{print $2, $1}' | sort -k2rn - > SRR1947691.filtered.mm9.barcode_freq.txt
- ```
+```
 
 
 
