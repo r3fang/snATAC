@@ -23,6 +23,7 @@ $ scATAC -t 2 \
 - [samtools 1.2+](http://www.htslib.org/doc/samtools.html)
 - [Python 2.7+](https://www.python.org/download/releases/2.7/)
 - [bedtools](http://bedtools.readthedocs.io/en/latest/)
+
 ##Introduction
 
 **scATAC** is an in-house Bioinformatics pipeline for analyzing multiplex single-cell ATAC-seq data.
@@ -113,19 +114,18 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
  bamToBed -i SRR1947691.filtered.hg19.bam \
  | slopBed -s -l 0 -r 300 -i stdin -g hg19.chrom.sizes \
  | bedtools genomecov -g hg19.chrom.sizes -i stdin -bg \
- | sort -k1,1 -k2,2n - | wigToBigWig stdin hg19.chrom.sizes SRR1947691.filtered.hg19.bw &
+ | sort -k1,1 -k2,2n - | wigToBigWig stdin hg19.chrom.sizes SRR1947691.filtered.hg19.bw 
 
  bamToBed -i SRR1947691.filtered.mm9.bam \
  | slopBed -s -l 0 -r 300 -i stdin -g mm9.chrom.sizes \
  | bedtools genomecov -g mm9.chrom.sizes -i stdin -bg \
- | sort -k1,1 -k2,2n - | wigToBigWig stdin mm9.chrom.sizes SRR1947691.filtered.mm9.bw &
+ | sort -k1,1 -k2,2n - | wigToBigWig stdin mm9.chrom.sizes SRR1947691.filtered.mm9.bw 
  
  # generate barcode frequency
  samtools view SRR1947691.filtered.hg19.bam | awk '{split($1,a,":"); print a[1]}' \
  | sort | uniq -c | awk '{print $2, $1}' | sort -k2rn - > SRR1947691.filtered.hg19.barcode_freq.txt 
  samtools view SRR1947691.filtered.mm9.bam | awk '{split($1,a,":"); print a[1]}' \
  | sort | uniq -c | awk '{print $2, $1}' | sort -k2rn - > SRR1947691.filtered.mm9.barcode_freq.txt
-  
  ```
 
 
