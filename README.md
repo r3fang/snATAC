@@ -114,7 +114,7 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
    | slopBed -s -l 0 -r 300 -i stdin -g hg19.chrom.sizes \
    | bedtools genomecov -g hg19.chrom.sizes -i stdin -bg \
    | sort -k1,1 -k2,2n - | wigToBigWig stdin hg19.chrom.sizes SRR1947691.filtered.hg19.bw 
-
+ 
  $ bamToBed -i SRR1947691.filtered.mm9.bam \
    | slopBed -s -l 0 -r 300 -i stdin -g mm9.chrom.sizes \
    | bedtools genomecov -g mm9.chrom.sizes -i stdin -bg \
