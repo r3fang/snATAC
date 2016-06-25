@@ -23,7 +23,8 @@ $ scATAC -t 2 \
 - [samtools 1.2+](http://www.htslib.org/doc/samtools.html)
 - [Python 2.7+](https://www.python.org/download/releases/2.7/)
 - [bedtools](http://bedtools.readthedocs.io/en/latest/)
-- [MACS2](https://github.com/taoliu/MACS)(OPTIONAL: needed only for peak calling)
+- [MACS2](https://github.com/taoliu/MACS) (OPTIONAL: needed only for peak calling)
+
 ##Introduction
 
 **scATAC** is an in-house Bioinformatics pipeline for analyzing multiplex single-cell ATAC-seq data.
