@@ -23,7 +23,7 @@ $ scATAC -t 2 \
 - [samtools 1.2+](http://www.htslib.org/doc/samtools.html)
 - [Python 2.7+](https://www.python.org/download/releases/2.7/)
 - [bedtools](http://bedtools.readthedocs.io/en/latest/)
-
+- [MACS2](https://github.com/taoliu/MACS)(OPTIONAL: needed only for peak calling)
 ##Introduction
 
 **scATAC** is an in-house Bioinformatics pipeline for analyzing multiplex single-cell ATAC-seq data.
@@ -126,7 +126,10 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
  
  $ samtools view SRR1947691.filtered.mm9.bam | awk '{split($1,a,":"); print a[1]}' \
    | sort | uniq -c | awk '{print $2, $1}' | sort -k2rn - > SRR1947691.filtered.mm9.barcode_freq.txt
-
+ 
+ # peak calling using MACS2
+ macs2 callpeak -t SRR1947691.filtered.hg19.bam -f BAM -g hs --outdir SRR1947691.filtered.hg19 -n SRR1947691.filtered.hg19 --extsize 300
+ macs2 callpeak -t SRR1947691.filtered.mm9.bam -f BAM -g mm --outdir SRR1947691.filtered.mm9 -n SRR1947691.filtered.mm9 --extsize 300
 ```
 
 
