@@ -26,7 +26,7 @@ $ scATAC -t 2 \
 - [Python 2.7+](https://www.python.org/download/releases/2.7/)
 - [bedtools](http://bedtools.readthedocs.io/en/latest/)
 - [MACS2](https://github.com/taoliu/MACS) (OPTIONAL: needed only for peak calling)
-- [Numpy](http://www.numpy.org/) [OPTIONAL: needed only for generating accessible binary matrix]
+- [Numpy](http://www.numpy.org/) (OPTIONAL: needed only for generating accessible binary matrix])
 
 ##Introduction
 
