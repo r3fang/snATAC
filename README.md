@@ -27,6 +27,7 @@ $ scATAC -t 2 \
 - [bedtools](http://bedtools.readthedocs.io/en/latest/)
 - [MACS2](https://github.com/taoliu/MACS) (OPTIONAL: needed only for peak calling)
 - [Numpy](http://www.numpy.org/) [OPTIONAL: needed only for generating accessible binary matrix]
+
 ##Introduction
 
 **scATAC** is an in-house Bioinformatics pipeline for analyzing multiplex single-cell ATAC-seq data.
