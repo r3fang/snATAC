@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # PART I check weather softwares installed
 command -v bwa >/dev/null 2>&1 || { echo >&2 "scATAC requires bwa but it is not installed. Aborting."; exit 1; }

@@ -1,4 +1,5 @@
 ##Get Started     
+
 ```bash
 $ git clone https://github.com/r3fang/scATAC.git
 $ cd scATAC
@@ -18,7 +19,8 @@ $ scATAC -t 2 \
 		 -g hg19.fa \
 		 -m 500
 ```
-##Depedency
+##Requirements
+
 - [bwa](https://github.com/lh3/bwa)
 - [samtools 1.2+](http://www.htslib.org/doc/samtools.html)
 - [Python 2.7+](https://www.python.org/download/releases/2.7/)
@@ -76,10 +78,12 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
 9. summerize and generate a log file;
 
 ##Output
+
 **scATAC** generates two files '.log' and '.bam'. 
 '.bam' is the final file that contains all usable reads and '.log' includes data metrics.
  
 ##Example
+
 ```bash
  # download decomplexed sample data (human GM12878 and mouse ES mixture) from Cusanovich, Science, 2015
  $ wget http://enhancer.sdsc.edu/r3fang/Cusanovich_2015/SRR1947691_1.fastq.gz
