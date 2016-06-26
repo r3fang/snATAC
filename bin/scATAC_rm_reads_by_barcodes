@@ -5,7 +5,8 @@ import sys
 
 def main():
     # load the barcodes
-    barcode_list = [line.strip() for line in open(sys.argv[1]).readlines()]
+    barcode_list = [line.strip() for line in  open(sys.argv[1]).read().split()]
+    #barcode_list = [line.strip() for line in open(sys.argv[1]).readlines()]
     # iterate sam file
     for line in sys.stdin:
         # head of bam file

@@ -141,8 +141,19 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
  $ macs2 callpeak -t SRR1947691.filtered.hg19.bam -f BAM -g hs \
    --outdir SRR1947691.filtered.hg19 -n SRR1947691.filtered.hg19 --extsize 300 -q 0.1
  $ macs2 callpeak -t SRR1947691.filtered.mm9.bam -f BAM -g mm \
-   --outdir SRR1947691.filtered.mm9 -n SRR1947691.filtered.mm9 --extsize 300 -q 0.1
+   --outdir SRR1947691.filtered.mm9 -n SRR1947691.filtered.mm9 --extsize 300 -q 0.1   
 ```
+
+## FAQ
+
+ 1. **How to remove reads from .bam file whose barcodes are not selected?**     
+ First, you need to provide a barcodes.sel.txt file that has barcodes you want to keep seperated by space or lines. Then run following command
+ ```bash
+ # filter reads whose barcodes are not selected
+ $ samtools view -h input.bam \
+   | scATAC_rm_reads_by_barcodes barcodes.sel.txt - \
+   | samtools view -bS - >  out.filtered.bam 
+ ```
 
 
 
