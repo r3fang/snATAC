@@ -82,9 +82,14 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
 **scATAC** generates two files '.log' and '.bam'. 
 '.bam' is the final file that contains all usable reads and '.log' includes data metrics.
  
-##Example
+##Complete Example
 
 ```bash
+ $ git clone https://github.com/r3fang/scATAC.git
+ $ cd scATAC
+ $ chmod u+x bin/*
+ $ export PATH=$PATH:./bin/ #(add the absolute path to .bash_profile permanently)
+
  # download decomplexed sample data (human GM12878 and mouse ES mixture) from Cusanovich, Science, 2015
  $ wget http://enhancer.sdsc.edu/r3fang/Cusanovich_2015/SRR1947691_1.fastq.gz
  $ wget http://enhancer.sdsc.edu/r3fang/Cusanovich_2015/SRR1947691_2.fastq.gz
