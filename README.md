@@ -148,6 +148,7 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
 
  1. **How to remove reads from .bam file whose barcodes are not selected?**     
  First, you need to provide a barcodes.sel.txt file that has barcodes you want to keep seperated by space or lines. Then run following command
+
  ```bash
  # filter reads whose barcodes are not selected
  $ samtools view -h input.bam \
