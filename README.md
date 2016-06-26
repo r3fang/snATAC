@@ -152,8 +152,7 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
  ```bash
  # filter reads whose barcodes are not selected
  $ samtools view -h input.bam \
-   | scATAC_rm_reads_by_barcodes barcodes.sel.txt - \
-   | samtools view -bS - >  out.filtered.bam 
+   | scATAC_rm_reads_by_barcodes barcodes.sel.txt - | samtools view -bS - >  out.filtered.bam 
  ```
 
 
