@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+
+# cat tmp.bed | scATAC_get_binary_mat peaks.bed barcodes.sel.txt SRR1947693 -
+
+import sys
+import numpy as np
+from operator import itemgetter 
+
+def main():
+    fname_ref = sys.argv[1]
+    fname_barcode = sys.argv[2]
+    prefix = sys.argv[3]
+    
+    regions = {}
+    regions_rev = {}
+    barcodes = {}
+    barcodes_rev = {}
+    
+    i = 0; j = 0;
+    with open(fname_ref) as fin:
+        for line in fin:
+            regions['\t'.join(line.split()[:3])] = i
+            regions_rev[i] = '\t'.join(line.split()[:3])
+            i += 1
+
+    with open(fname_barcode) as fin:
+        for line in fin:
+            cur_barcode = line.strip()
+            barcodes[cur_barcode] = j
+            barcodes_rev[j] = cur_barcode
+            j += 1
+    
+    mat = np.zeros((j, i))
+    for line in sys.stdin:
+        elems = line.split()
+        cur_region = '\t'.join(elems[:3])
+        cur_barcode = elems[4].split(':')[0]
+        if cur_barcode not in barcodes: continue;
+        if cur_region not in regions: continue;
+        mat[barcodes[cur_barcode], regions[cur_region]] += 1
+    
+    # convert the matrix to a binary matrix
+    mat[ np.where( mat > 1 ) ] = 1    
+    # filter columns and rows without any read count
+    mat_csum = np.sum(mat, axis=0)
+    sel_y = np.where(mat_csum >= 1)[0].tolist()
+    np.savetxt(prefix+'.mat', mat[:,sel_y], delimiter='\t', fmt="%d")  
+
+    with open(prefix+'.xgi', 'w') as fout:
+        for x in sorted(barcodes.items(), key=lambda x: x[1]):
+            fout.write(x[0]+'\n')
+    
+    with open(prefix+'.ygi', 'w') as fout:
+        for x in sel_y: fout.write(regions_rev[x]+'\n')
+
+if __name__ == '__main__':
+    main()
+
