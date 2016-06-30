@@ -1,0 +1,93 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import optparse
+import itertools 
+from random import shuffle
+
+def min_dist(s, sl):
+    """ return the string with min edit distance """
+    ss = sl[:]
+    if len(s) == 0: sys.exit("error(min_dist): inquiry string has length 0")
+    if len(ss) == 0: return (s, len(s));
+    if ([len(s) == len(sj) for sj in ss].count(False) > 0): sys.exit("error(min_dist): different string length")
+    dists = [[a == b for (a,b) in zip(s, sj)].count(False) for sj in ss]
+    min_value = min(dists)
+    min_index = dists.index(min(dists))
+    min_s = ss[min_index]        
+    return (min_s, min_value)
+     
+    
+def main():
+    parser = optparse.OptionParser(description='Barcode Design for scATAC.', 
+                                   usage='%prog [-h] [-l LEN] [-d DIST] [-n NUM]')
+
+    parser.add_option('-l',
+                      dest="LEN",
+                      type=int,
+                      help='barcode length [8].'
+                      )
+
+    parser.add_option('-n',
+                      dest="NUM", 
+                      type=int,
+                      help='number of barcodes to be generated.'
+                      )
+   
+    parser.add_option('-d',
+                      dest="DIST", 
+                      type=int,
+                      help='min pair-wise distance between two generated barcodes.'
+                      )
+    
+    options, remainder = parser.parse_args()
+    
+    
+    barocde_len = 8    
+    if options.LEN:
+        barocde_len = options.LEN
+    else: 
+        parser.print_help()
+        exit('error: too few arguments;')
+    if options.NUM:
+        barocde_num = options.NUM
+    else: 
+        parser.print_help()
+        exit('error: too few arguments;')
+
+    if options.DIST:
+        barocde_dist = options.DIST
+    else:
+        parser.print_help()
+        exit('error: too few arguments;')
+    
+    if not isinstance(barocde_len, int): exit('error: -l must be an integer')
+    if not isinstance(barocde_num, int): exit('error: -n must be an integer')
+    if not isinstance(barocde_dist, int): exit('error: -d must be an integer')
+
+    bases=['A','T','G','C']
+    res_list = []
+    barcodes_list = [''.join(x) for x in itertools.product(bases, repeat=barocde_len)]
+    shuffle(barcodes_list)
+    for elem in barcodes_list:
+        (s, d) = min_dist(elem, res_list)
+        if d >= barocde_dist: res_list.append(elem)
+        if len(res_list) >= barocde_num: break
+    for line in res_list:
+        try:
+            print line
+        except IOError:
+            try:
+                sys.stdout.close()
+            except IOError:
+                pass
+            try:
+                sys.stderr.close()
+            except IOError:
+                pass
+        continue
+    
+if __name__ == '__main__':
+    main()
+    
