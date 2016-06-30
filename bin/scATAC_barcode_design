@@ -1,10 +1,15 @@
 #!/usr/bin/env python
-
+# scATAC_barcode_design -l 8 -d 4 -o i7.4mm.txt -g 0.5 -n 3
+ 
 import sys
 import os
 import optparse
 import itertools 
 from random import shuffle
+from operator import itemgetter
+from collections import Counter
+from itertools import groupby
+import copy
 
 def min_dist(s, sl):
     """ return the string with min edit distance """
@@ -17,11 +22,16 @@ def min_dist(s, sl):
     min_index = dists.index(min(dists))
     min_s = ss[min_index]        
     return (min_s, min_value)
-     
-    
+  
+def cal_gc(s):
+    return float((s.count("C") + s.count("G")))/len(s)
+
+def cal_max_consecutive(s):
+    return max([len(list(g)) for k, g in groupby(s)])
+
 def main():
     parser = optparse.OptionParser(description='Barcode Design for scATAC.', 
-                                   usage='%prog [-h] [-l LEN] [-d DIST] [-n NUM]')
+                                   usage='%prog [-h] [-l LEN] [-d DIST] [-o FNAME] [-g GC] [-n NUM_REPEAT] [-s SED]')
 
     parser.add_option('-l',
                       dest="LEN",
@@ -29,29 +39,42 @@ def main():
                       help='barcode length [8].'
                       )
 
-    parser.add_option('-n',
-                      dest="NUM", 
-                      type=int,
-                      help='number of barcodes to be generated.'
-                      )
-   
     parser.add_option('-d',
                       dest="DIST", 
                       type=int,
                       help='min pair-wise distance between two generated barcodes.'
                       )
+
+    parser.add_option('-g',
+                      dest="GC", 
+                      type=float,
+                      help='max gc content.'
+                      )
+
+    parser.add_option('-n',
+                      dest="NUM_REPEAT", 
+                      type=int,
+                      help='max repeat letters allowed.'
+                      )
+
+    parser.add_option('-s',
+                      dest="SED", 
+                      help='sed barcodes to start with.'
+                      )
+
+    parser.add_option('-o',
+                      dest="FNAME", 
+                      help='output file.')
     
     options, remainder = parser.parse_args()
     
     
-    barocde_len = 8    
+    barocde_len = 8  
+    barocde_gc = 0.5 
+    barocde_repeat = 3 
+     
     if options.LEN:
         barocde_len = options.LEN
-    else: 
-        parser.print_help()
-        exit('error: too few arguments;')
-    if options.NUM:
-        barocde_num = options.NUM
     else: 
         parser.print_help()
         exit('error: too few arguments;')
@@ -61,32 +84,56 @@ def main():
     else:
         parser.print_help()
         exit('error: too few arguments;')
-    
-    if not isinstance(barocde_len, int): exit('error: -l must be an integer')
-    if not isinstance(barocde_num, int): exit('error: -n must be an integer')
-    if not isinstance(barocde_dist, int): exit('error: -d must be an integer')
 
-    bases=['A','T','G','C']
-    res_list = []
-    barcodes_list = [''.join(x) for x in itertools.product(bases, repeat=barocde_len)]
-    shuffle(barcodes_list)
-    for elem in barcodes_list:
-        (s, d) = min_dist(elem, res_list)
-        if d >= barocde_dist: res_list.append(elem)
-        if len(res_list) >= barocde_num: break
-    for line in res_list:
-        try:
-            print line
-        except IOError:
-            try:
-                sys.stdout.close()
-            except IOError:
-                pass
-            try:
-                sys.stderr.close()
-            except IOError:
-                pass
-        continue
+    if options.GC:
+        barocde_gc = options.GC
+
+    if options.NUM_REPEAT:
+        barocde_repeat = options.NUM_REPEAT
+
+    if options.SED: 
+        fsed_name = options.SED
+    else: 
+        fsed_name = None
+
+    if options.FNAME:
+        fout_name = options.FNAME
+    else:
+        parser.print_help()
+        exit('error: too few arguments;')
+    
+    if not isinstance(barocde_len,  int):  exit('error: -l must be an integer')
+    if not isinstance(barocde_dist, int): exit('error: -d must be an integer')
+    if not isinstance(barocde_gc,  float): exit('error: -g must be an integer')
+    if not isinstance(barocde_repeat, int): exit('error: -r must be an integer')
+    
+    sed_list = [i.strip() for i in open(fsed_name, "r")] if fsed_name != None else [] 
+    barcodes = {}
+    for elem in sed_list: barcodes[elem] = (cal_gc(elem), cal_max_consecutive(elem))    
+    num_track = len(barcodes.keys())
+    
+    iter_num = -1
+    while True:
+        iter_num += 1
+        print("iteration %d: %d barcodes have been found ..." % (iter_num, num_track))
+        bases=['A','T','G','C']
+        barcodes_list = [''.join(x) for x in itertools.product(bases, repeat=barocde_len)]
+        shuffle(barcodes_list)
+        for elem in barcodes_list:
+            (s, d) = min_dist(elem, barcodes.keys())
+            if d >= barocde_dist: 
+                if(cal_gc(elem) <= barocde_gc and cal_max_consecutive(elem) <= barocde_repeat):
+                    barcodes[elem] = (cal_gc(elem), cal_max_consecutive(elem))        
+        if num_track == len(barcodes.keys()):
+            break
+        else:
+            num_track = len(barcodes.keys())
+            
+    with open(fout_name, "w") as fout:
+        for key in barcodes:
+            fout.write(key+'\n')
+    print("Finished! %d unique qualified barcodes have been found" % (len(barcodes.keys())))
+        
     
 if __name__ == '__main__':
     main()
