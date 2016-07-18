@@ -26,7 +26,7 @@ scATAC -t 2 -f demo_R1.fastq.gz -r demo_R2.fastq.gz -b ./barcodes -d 2 -p Picard
 
 Options:    
 	-h, --help                  show this help message and exit.
-	-t  THREADS                 threads [1].
+	-t  THREADS                 threads for BWA mapping and duplication removal [1].
 	-f  R1                      fastq.gz file that contains forward reads (only fastq.gz allowed).
 	-r  R2                      fastq.gz file that contains reverse reads (only fastq.gz allowed).
 	-b  BARCODE_DIR             folder that contains r7_ATAC, i7_ATAC, i5_ATAC and r5_ATAC barcode.
@@ -160,8 +160,10 @@ fi
 mkdir $PREFIX\_tmp
 
 echo "Step 1. map using bwa followed by filtering reads with MAPQ < 10;" 2>&1 | tee -a $PREFIX.log
-bwa mem -M -t $THREADS $GENOME $R1 $R2 \
-| samtools view -q 10 -bS - > $PREFIX\_tmp/$PREFIX.umap.bam
+if [ ! -f $PREFIX\_tmp/$PREFIX.umap.bam ]; then
+	bwa mem -M -t $THREADS $GENOME $R1 $R2 \
+	| samtools view -q 10 -bS - > $PREFIX\_tmp/$PREFIX.umap.bam
+fi
 
 echo "Step 2. correct barcode error by allowing $MAX_BARCODE_MISMATCH mismatches;" 2>&1 | tee -a $PREFIX.log
 samtools view -h $PREFIX\_tmp/$PREFIX.umap.bam \
@@ -178,16 +180,26 @@ samtools view -h $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.bam \
 | scATAC_decell $MIN_READ $PREFIX\_tmp/cells -
 
 echo 'Step 4. remove PCR duplication for each cell;' 2>&1 | tee -a $PREFIX.log
+iterator=0
 for line in `ls $PREFIX\_tmp/cells | grep .sam`
 do
 	barcode="${line%.*}"
 	samtools view -bS $PREFIX\_tmp/cells/$barcode.sam \
 	| samtools sort - $PREFIX\_tmp/cells/$barcode.sorted
-	java -Xmx1G -jar $MARK_DUPLICATE INPUT=$PREFIX\_tmp/cells/$barcode.sorted.bam OUTPUT=$PREFIX\_tmp/cells/$barcode.sorted.filtered.bam ASSUME_SORTED=true \
-		REMOVE_DUPLICATES=true VALIDATION_STRINGENCY=LENIENT METRICS_FILE=$PREFIX\_tmp/cells/metrics.$barcode.txt TMP_DIR=$PREFIX\_tmp/cells/$barcode\_tmp
-	rm -r $PREFIX\_tmp/cells/$barcode\_tmp
-	rm $PREFIX\_tmp/cells/$barcode.sam
+	java -Xmx500M -jar $MARK_DUPLICATE INPUT=$PREFIX\_tmp/cells/$barcode.sorted.bam OUTPUT=$PREFIX\_tmp/cells/$barcode.sorted.filtered.bam ASSUME_SORTED=true \
+		REMOVE_DUPLICATES=true VALIDATION_STRINGENCY=LENIENT METRICS_FILE=$PREFIX\_tmp/cells/metrics.$barcode.txt TMP_DIR=$PREFIX\_tmp/cells/$barcode\_tmp &
+
+    iterator=$((iterator + 1))
+    if (( $iterator % $THREADS == 0 ))           # no need for brackets
+    then
+  	  while kill -0 $! 2>/dev/null
+  	  do
+  	    sleep 5
+  	  done
+    fi
 done
+rm -r $PREFIX\_tmp/cells/*_tmp
+rm $PREFIX\_tmp/cells/*.sam
 
 echo 'Step 5. merge reads from different cells to a single file;' 2>&1 | tee -a $PREFIX.log
 samtools cat -o $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.bam $PREFIX\_tmp/cells/*.sorted.bam
