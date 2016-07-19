@@ -25,10 +25,10 @@ Example:
 scATAC -t 2 -f demo_R1.fastq.gz -r demo_R2.fastq.gz -b ./barcodes -d 2 -p Picard/MarkDuplicates.jar -n demo -g hg19.fa -m 500 
 
 Options:    
-	-h, --help                  show this help message and exit.
-	-t  THREADS                 threads for BWA mapping and duplication removal [1].
-	-f  R1                      fastq.gz file that contains forward reads (only fastq.gz allowed).
-	-r  R2                      fastq.gz file that contains reverse reads (only fastq.gz allowed).
+	-h, --help                  Show this help message and exit.
+	-t  THREADS                 Set threads for BWA mapping, sorting and duplication removal [1].
+	-f  R1                      fastq.gz file that contains forward reads (only .gz allowed).
+	-r  R2                      fastq.gz file that contains reverse reads (only .gz allowed).
 	-b  BARCODE_DIR             folder that contains r7_ATAC, i7_ATAC, i5_ATAC and r5_ATAC barcode.
 	-d  MAX_BARCODE_MISMATCH    max barcode mismatch allowed for barcode error correction [2].
 	-p  MARK_DUPLICATE          path to picard MarkDuplicates.jar [MarkDuplicates.jar].
@@ -171,7 +171,7 @@ samtools view -h $PREFIX\_tmp/$PREFIX.umap.bam \
 | samtools view -bS - > $PREFIX\_tmp/$PREFIX.umap.corrected.bam
 
 echo "Step 3. split reads to individual cells based on the barcode combination;" 2>&1 | tee -a $PREFIX.log
-samtools sort -n -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted
+samtools sort -n -@ $THREADS -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted
 if [ -d $PREFIX\_tmp/cells ]; then
 	rm -r $PREFIX\_tmp/cells
 fi
@@ -185,7 +185,7 @@ for line in `ls $PREFIX\_tmp/cells | grep .sam`
 do
 	barcode="${line%.*}"
 	samtools view -bS $PREFIX\_tmp/cells/$barcode.sam \
-	| samtools sort - $PREFIX\_tmp/cells/$barcode.sorted
+	| samtools sort -@ $THREADS - $PREFIX\_tmp/cells/$barcode.sorted
 	java -Xmx500M -jar $MARK_DUPLICATE INPUT=$PREFIX\_tmp/cells/$barcode.sorted.bam OUTPUT=$PREFIX\_tmp/cells/$barcode.sorted.filtered.bam ASSUME_SORTED=true \
 		REMOVE_DUPLICATES=true VALIDATION_STRINGENCY=LENIENT METRICS_FILE=$PREFIX\_tmp/cells/metrics.$barcode.txt TMP_DIR=$PREFIX\_tmp/cells/$barcode\_tmp &
 
@@ -217,7 +217,7 @@ samtools view -h $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.bam \
 | samtools view -bS - > $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.bam
 
 echo 'Step 8. sort by genomic coordinates;' 2>&1 | tee -a $PREFIX.log
-samtools sort -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted
+samtools sort -@ $THREADS -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted
 
 echo 'Step 9. summerize;' 2>&1 | tee -a $PREFIX.log
 TOTAL_READS=$(zcat $R1 | wc -l | awk '{print $1}')
@@ -253,6 +253,5 @@ END{
     print "Median number of reads for selected cells: "a[int((x-1)/2)] 
     print "Max number of reads for selected cells: "max(a)
 }' 2>&1 | tee -a $PREFIX.log
-
 mv $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted.bam $PREFIX.bam
 rm -r $PREFIX\_tmp
