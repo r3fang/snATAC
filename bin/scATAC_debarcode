@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import gzip
+import bz2
 import sys
 import collections
 import os
@@ -46,9 +47,33 @@ def main():
     if not os.path.isfile(fi2_name): exit("error: \'%s\' not exist" % fi2_name)
     if not os.path.isfile(fr1_name): exit("error: \'%s\' not exist" % fr1_name)
     
-    fi1 = gzip.open(fi1_name, 'rb')
-    fi2 = gzip.open(fi2_name, 'rb')
-    fr1 = gzip.open(fr1_name, 'rb')
+    # check file format
+    if fi1_name.endswith('.gz'):
+        fi1 = gzip.open(fi1_name, 'rb')
+    elif fi1_name.endswith('.bz2'):
+        fi1 = bz2.BZ2File(fi1_name)
+    elif fi1_name.endswith('.fastq'):
+        fi1 = open(fi1_name, 'r')
+    elif fi1_name.endswith('.fq'):
+        fi1 = open(fi1_name, 'r')
+
+    if fi2_name.endswith('.gz'):
+        fi2 = gzip.open(fi2_name, 'rb')
+    elif fi2_name.endswith('.bz2'):
+        fi2 = bz2.BZ2File(fi2_name)
+    elif fi2_name.endswith('.fastq'):
+        fi2 = open(fi2_name, 'r')
+    elif fi2_name.endswith('.fq'):
+        fi2 = open(fi2_name, 'r')
+
+    if fr1_name.endswith('.gz'):
+        fr1 = gzip.open(fr1_name, 'rb')
+    elif fr1_name.endswith('.bz2'):
+        fr1 = bz2.BZ2File(fr1_name)
+    elif fr1_name.endswith('.fastq'):
+        fr1 = open(fr1_name, 'r')
+    elif fr1_name.endswith('.fq'):
+        fr1 = open(fr1_name, 'r')
     
     while True:
         cur_i1_name = fi1.readline().strip()[1:]
