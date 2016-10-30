@@ -51,7 +51,7 @@ def main():
     if fi1_name.endswith('.gz'):
         fi1 = gzip.open(fi1_name, 'rb')
     elif fi1_name.endswith('.bz2'):
-        fi1 = bz2.BZ2File(fi1_name)
+        fi1 = bz2.BZ2File(fi1_name, 'r')
     elif fi1_name.endswith('.fastq'):
         fi1 = open(fi1_name, 'r')
     elif fi1_name.endswith('.fq'):
@@ -60,7 +60,7 @@ def main():
     if fi2_name.endswith('.gz'):
         fi2 = gzip.open(fi2_name, 'rb')
     elif fi2_name.endswith('.bz2'):
-        fi2 = bz2.BZ2File(fi2_name)
+        fi2 = bz2.BZ2File(fi2_name, 'r')
     elif fi2_name.endswith('.fastq'):
         fi2 = open(fi2_name, 'r')
     elif fi2_name.endswith('.fq'):
@@ -69,7 +69,7 @@ def main():
     if fr1_name.endswith('.gz'):
         fr1 = gzip.open(fr1_name, 'rb')
     elif fr1_name.endswith('.bz2'):
-        fr1 = bz2.BZ2File(fr1_name)
+        fr1 = bz2.BZ2File(fr1_name, 'r')
     elif fr1_name.endswith('.fastq'):
         fr1 = open(fr1_name, 'r')
     elif fr1_name.endswith('.fq'):
@@ -91,7 +91,7 @@ def main():
         cur_r1_plus = fr1.readline().strip()
         cur_r1_qual = fr1.readline().strip()
             
-        if cur_i1_name == "" or cur_i2_name == "" or cur_r1_name == "": break
+        if cur_i1_name == "" or cur_i2_name == "" or cur_r1_name == "": break        
         if not (cur_i1_name.split()[0] == cur_i2_name.split()[0] == cur_r1_name.split()[0]): sys.exit("error(main): read name not matched")        
 
         cur_r7 = cur_i1_read[:8]

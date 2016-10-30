@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+# remove fragments whose barcode not in the list
+
+import sys
+
+def main():
+    # load the barcodes
+    barcode_list = [line.strip() for line in  open(sys.argv[1]).read().split()]
+    # iterate sam file
+    for line in sys.stdin:
+        barcode_cur = line.split()[3].split(":")[0]
+        if barcode_cur in barcode_list:
+            try:
+                print line,
+            except IOError:
+                try:
+                    sys.stdout.close()
+                except IOError:
+                    pass
+                try:
+                    sys.stderr.close()
+                except IOError:
+                    pass
+    
+    
+if __name__ == '__main__':
+    main()
