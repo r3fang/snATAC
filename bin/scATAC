@@ -2,7 +2,7 @@
 set -e
 
 # PART I check weather softwares installed
-command -v bwa >/dev/null 2>&1 || { echo >&2 "scATAC requires bwa but it is not installed. Aborting."; exit 1; }
+command -v bowtie2 >/dev/null 2>&1 || { echo >&2 "scATAC requires bowtie2 but it is not installed. Aborting."; exit 1; }
 command -v samtools >/dev/null 2>&1 || { echo >&2 "scATAC requires samtools but it is not installed. Aborting."; exit 1; }
 command -v java >/dev/null 2>&1 || { echo >&2 "scATAC requires java but it is not installed. Aborting."; exit 1; }
 command -v scATAC_barcode_err_correct >/dev/null 2>&1 || { echo >&2 "scATAC requires scATAC_barcode_err_correct but it is not installed. Aborting."; exit 1; }
@@ -19,21 +19,21 @@ Version: 06.10.2016
 Contact: Rongxin Fang <r3fang@ucsd.edu>
 Ren Lab: http://bioinformatics-renlab.ucsd.edu/rentrac/
 
-usage: ${0##*/} [-h] [-t THREADS] [-f R1] [-r R2] [-b BARCODE_DIR] [-d MAX_BARCODE_MISMATCH] [-p MarkDuplicates.jar] [-n PREFIX] [-g BWA_GENOME] [-m MIN_READ]  
+usage: ${0##*/} [-h] [-t THREADS] [-f R1] [-r R2] [-b BARCODE_DIR] [-d MAX_BARCODE_MISMATCH] [-p MarkDuplicates.jar] [-n PREFIX] [-g BOWTIE2_GENOME] [-m MIN_READ]  
 
 Example:
 scATAC -t 2 -f demo_R1.fastq.gz -r demo_R2.fastq.gz -b ./barcodes -d 2 -p Picard/MarkDuplicates.jar -n demo -g hg19.fa -m 500 
 
 Options:    
 	-h, --help                  Show this help message and exit.
-	-t  THREADS                 Set threads for BWA mapping, sorting and duplication removal [1].
+	-t  THREADS                 Set threads for Bowtie2 mapping, sorting and duplication removal [1].
 	-f  R1                      fastq.gz file that contains forward reads (only .gz allowed).
 	-r  R2                      fastq.gz file that contains reverse reads (only .gz allowed).
 	-b  BARCODE_DIR             folder that contains r7_ATAC, i7_ATAC, i5_ATAC and r5_ATAC barcode.
 	-d  MAX_BARCODE_MISMATCH    max barcode mismatch allowed for barcode error correction [2].
 	-p  MARK_DUPLICATE          path to picard MarkDuplicates.jar [MarkDuplicates.jar].
 	-n  PREFIX                  prefix of output files.
-	-g  BWA_GENOME              BWA indexed reference genome.
+	-g  BOWTIE2_GENOME          Bowtie2 indexed reference genome.
 	-m  MIN_READ                cells with reads less than MIN_READ will be filtered [500].
 
 Note: To use scATAC, you need to first decomplex barcode combination and integrate barcode 
@@ -159,10 +159,9 @@ if [ -d $PREFIX\_tmp ]; then
 fi
 mkdir $PREFIX\_tmp
 
-echo "Step 1. map using bwa followed by filtering reads with MAPQ < 10;" 2>&1 | tee -a $PREFIX.log
+echo "Step 1. map using bowtie2 followed by filtering reads with MAPQ < 30 and inproperly mapped pairs;" 2>&1 | tee -a $PREFIX.log
 if [ ! -f $PREFIX\_tmp/$PREFIX.umap.bam ]; then
-	bwa mem -M -t $THREADS $GENOME $R1 $R2 \
-	| samtools view -q 10 -bS - > $PREFIX\_tmp/$PREFIX.umap.bam
+	bowtie2 -p $THREADS -t -X2000 --no-mixed --no-discordant -x $GENOME -1 $R1 -2 $R2 | samtools view -F 1804 -q 30 -bS - > $PREFIX\_tmp/$PREFIX.umap.bam
 fi
 
 echo "Step 2. correct barcode error by allowing $MAX_BARCODE_MISMATCH mismatches;" 2>&1 | tee -a $PREFIX.log
@@ -254,4 +253,4 @@ END{
     print "Max number of reads for selected cells: "max(a)
 }' 2>&1 | tee -a $PREFIX.log
 mv $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted.bam $PREFIX.bam
-rm -r $PREFIX\_tmp
+#rm -r $PREFIX\_tmp
