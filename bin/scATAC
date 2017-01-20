@@ -94,11 +94,11 @@ if [ ! -f $MARK_DUPLICATE ]; then
 	exit 1
 fi
 
-if [ ! -f $GENOME ]; then
-	usage
-    echo "error: '$GENOME' not exists.";
-	exit 1
-fi
+#if [ ! -f $GENOME ]; then
+#	usage
+#    echo "error: '$GENOME' not exists.";
+#	exit 1
+#fi
 
 if [ ! -f $BARCODE_DIR/r7_ATAC ]; then
 	usage
