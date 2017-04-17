@@ -64,7 +64,7 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
       'scATAC_debarcode -a I1.fastq.gz -b I2.fastq.gz -c R2.fastq.gz | gzip - > R2.decomplex.fastq.gz'
 ```
 
-##Pipeline
+## Pipeline
 
 **scATAC** is made of following steps:
 
