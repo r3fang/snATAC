@@ -203,7 +203,7 @@ rm $PREFIX\_tmp/cells/*.sam
 echo 'Step 5. merge reads from different cells to a single file;' 2>&1 | tee -a $PREFIX.log
 samtools cat -o $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.bam $PREFIX\_tmp/cells/*.sorted.bam
 samtools cat -o $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.bam $PREFIX\_tmp/cells/*.sorted.filtered.bam
-rm -r $PREFIX\_tmp/cells/
+#rm -r $PREFIX\_tmp/cells/
 
 echo 'Step 6. generate barcode frequency;' 2>&1 | tee -a $PREFIX.log
 samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.bam \
