@@ -1,4 +1,4 @@
-##Get Started     
+## Get Started     
 
 ```bash
 $ git clone https://github.com/r3fang/scATAC.git
@@ -19,7 +19,7 @@ $ scATAC -t 2 \
 		 -g hg19.fa \
 		 -m 500
 ```
-##Requirements
+## Requirements
 
 - [bwa](https://github.com/lh3/bwa)
 - [samtools 1.2+](http://www.htslib.org/doc/samtools.html)
@@ -28,7 +28,7 @@ $ scATAC -t 2 \
 - [MACS2](https://github.com/taoliu/MACS) (OPTIONAL: needed only for peak calling)
 - [Numpy](http://www.numpy.org/) (OPTIONAL: needed only for generating accessible binary matrix])
 
-##Introduction
+## Introduction
 
 **scATAC** is an in-house Bioinformatics pipeline for analyzing multiplex single-cell ATAC-seq data.
 
@@ -78,12 +78,12 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
 8. filter cells with reads counts less than given number [500];
 9. summerize and generate a log file;
 
-##Output
+## Output
 
 **scATAC** generates two files '.log' and '.bam'. 
 '.bam' is the final file that contains all usable reads and '.log' includes data metrics.
  
-##Complete Example
+## Complete Example
 
 ```bash
  $ git clone https://github.com/r3fang/scATAC.git
@@ -183,5 +183,6 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
    | scATAC_get_binary_mat peaks.bed barcode.sel.txt prefix 
  ```
 
-
+## Licence
+MIT
 
