@@ -230,8 +230,8 @@ TOTAL_BARCODE=$(samtools view $PREFIX\_tmp/$PREFIX.umap.corrected.bam | awk '{sp
 
 echo 'Step 10. clean up;' 2>&1 | tee -a $PREFIX.log
 echo "================================ Summary ==================================" 2>&1 | tee -a $PREFIX.log
-echo "Total number of raw reads: $((TOTAL_READS/2))" 2>&1 | tee -a $PREFIX.log
-echo "Uniquely mapped reads (MAPQ>=10): $UNIQ_READS" 2>&1 | tee -a $PREFIX.log
+echo "Total number of raw reads: $((TOTAL_READS/4))" 2>&1 | tee -a $PREFIX.log
+echo "Uniquely mapped reads (MAPQ>=30): $UNIQ_READS" 2>&1 | tee -a $PREFIX.log
 echo "Reads left after barcode correction: $BARCODE_CORRECTED_READS" 2>&1 | tee -a $PREFIX.log
 echo "Uniquely barcode combinations: $TOTAL_BARCODE" 2>&1 | tee -a $PREFIX.log
 echo "Estimated PCR duplication rate: $(echo "scale=2; ($BEFORE_PICARD_READS - $AFTER_PICARD_READS) / $BEFORE_PICARD_READS * 100"| bc -l)%" 2>&1 | tee -a $PREFIX.log
