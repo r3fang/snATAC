@@ -145,44 +145,6 @@ Note: To use scATAC, you need to first decomplex barcode combination and integra
    --outdir SRR1947691.filtered.mm9 -n SRR1947691.filtered.mm9 --extsize 300 -q 0.1   
 ```
 
-## FAQ
-
- 1. **How to remove reads from .bam file whose barcodes are not selected?**     
- First, you need to provide a barcodes.sel.txt file that has barcodes you want to keep seperated by space or lines. Then run following command
-
- ```bash
- # filter reads whose barcodes are not selected
- $ samtools view -h input.bam \
-   | scATAC_rm_reads_by_barcodes barcodes.sel.txt - | samtools view -bS - >  out.filtered.bam 
- ```
-
- 2. **How to remove fragments from fragment file whose barcodes are not selected?**     
- First, you need to provide a barcodes.sel.txt file that has barcodes you want to keep seperated by space or lines. Then run following command
-
- ```bash
- # filter fragments whose barcodes are not selected
- $ zcat fragment.tn5.bed.gz \
-   | scATAC_rm_fragments_by_barcodes barcodes.sel.txt - >  fragment.tn5.filtered.bed 
- ```
-
- 3. **How to generate accessible binary matrix?**     
- First, you need to provide (1) a .bed file peaks.bed has all the inquiry regions and (2) a barcode.sel.txt file has a list of inquiry barcodes. Next, be sure that .bed file is a valid 
- 
- ```awk '{if($3 <= $2) print }' peaks.bed```
- 
- it is valid if nothing printed on the screen, otherwise change manuanlly or 
- 
- ```awk '{if($3 <= $2) printf "%s\t%d\t%d\t%s\n", $1, $3, $2, $4; else printf "%s\t%d\t%d\t%s\n", $1, $2, $3, $4 }' peaks.bed > peaks.valid.bed```. 
- 
- Finally you can generate .mat, .xgi, .ygi by
-
- ```bash
- $ awk '{printf "%s\t%d\t%d\t%s\n", $1, $2, $3, $4}' peaks.bed \
-   | intersectBed -wa -wb -a stdin -b input.bam \
-   | awk '{print $1, $2, $3, $4, $8}' \
-   | scATAC_get_binary_mat peaks.bed barcode.sel.txt prefix 
- ```
-
 ## Licence
 MIT
 

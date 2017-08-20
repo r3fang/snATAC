@@ -170,7 +170,7 @@ samtools view -h $PREFIX\_tmp/$PREFIX.umap.bam \
 | samtools view -bS - > $PREFIX\_tmp/$PREFIX.umap.corrected.bam
 
 echo "Step 3. split reads to individual cells based on the barcode combination;" 2>&1 | tee -a $PREFIX.log
-samtools sort -n -@ $THREADS -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted
+samtools sort -n -@ $THREADS -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.bam -o $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.bam
 if [ -d $PREFIX\_tmp/cells ]; then
 	rm -r $PREFIX\_tmp/cells
 fi
@@ -184,10 +184,8 @@ for line in `ls $PREFIX\_tmp/cells | grep .sam`
 do
 	barcode="${line%.*}"
 	samtools view -bS $PREFIX\_tmp/cells/$barcode.sam \
-	| samtools sort -@ $THREADS - $PREFIX\_tmp/cells/$barcode.sorted
-	java -Xmx500M -jar $MARK_DUPLICATE INPUT=$PREFIX\_tmp/cells/$barcode.sorted.bam OUTPUT=$PREFIX\_tmp/cells/$barcode.sorted.filtered.bam ASSUME_SORTED=true \
-		REMOVE_DUPLICATES=true VALIDATION_STRINGENCY=LENIENT METRICS_FILE=$PREFIX\_tmp/cells/metrics.$barcode.txt TMP_DIR=$PREFIX\_tmp/cells/$barcode\_tmp &
-
+	| samtools sort -@ $THREADS - -o $PREFIX\_tmp/cells/$barcode.sorted.bam
+	samtools rmdup $PREFIX\_tmp/cells/$barcode.sorted.bam $PREFIX\_tmp/cells/$barcode.sorted.nodup.bam
     iterator=$((iterator + 1))
     if (( $iterator % $THREADS == 0 ))           # no need for brackets
     then
@@ -216,7 +214,7 @@ samtools view -h $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.bam \
 | samtools view -bS - > $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.bam
 
 echo 'Step 8. sort by genomic coordinates;' 2>&1 | tee -a $PREFIX.log
-samtools sort -@ $THREADS -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.bam $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted
+samtools sort -@ $THREADS -m 1G $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.bam -o $PREFIX\_tmp/$PREFIX.umap.corrected.nsorted.nodup.filtered.gsorted
 
 echo 'Step 9. summerize;' 2>&1 | tee -a $PREFIX.log
 TOTAL_READS=$(zcat $R1 | wc -l | awk '{print $1}')
