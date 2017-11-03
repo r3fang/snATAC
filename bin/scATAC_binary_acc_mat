@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+
+"""
+create binary accessible matrix
+Created by Rongxin Fang
+"""
+
+import sys
+import numpy as np
+from operator import itemgetter 
+import pybedtools 
+import gzip 
+
+
+def main():
+    from argparse import ArgumentParser
+    # parameters 
+    parser = ArgumentParser(description='extract valid pair from a name-sorted bam file')
+    parser.add_argument('-i', '--read', help='bed file contains read', required=True)
+    parser.add_argument('-y', '--peak', help='columns: bed file contains peaks', required=True)
+    parser.add_argument('-x', '--cell', help='rows: txt file contains selected cell barcode', required=True)
+	options = parser.parse_args()
+	
+	# input parsing
+	read_bed = options.input
+	peak_bed = options.peak
+	cell_txt = options.cell
+    
+    # read peaks and reads
+    peaks = pybedtools.BedTool(peak_bed)
+    reads = pybedtools.BedTool(read_bed)
+
+    # find overlap
+    
+    ov = peaks.intersect(reads, wa=True,  wb=True)
+    
+    regions = {}
+    regions_rev = {}
+    barcodes = {}
+    barcodes_rev = {}
+    
+    i = 0; j = 0;
+    with open(fname_ref) as fin:
+        for line in fin:
+            regions['\t'.join(line.split()[:3])] = i
+            regions_rev[i] = '\t'.join(line.split()[:3])
+            i += 1
+
+    with open(fname_barcode) as fin:
+        for line in fin:
+            cur_barcode = line.strip().split()[0]
+            barcodes[cur_barcode] = j
+            barcodes_rev[j] = cur_barcode
+            j += 1
+
+    mat = np.zeros((j, i))
+    for line in sys.stdin:
+        elems = line.split()
+        cur_region = '\t'.join(elems[:3])
+        cur_barcode = elems[6].split(':')[0]
+        if cur_barcode not in barcodes:
+            continue
+        if cur_region not in regions: sys.exit("error(main): region not in the list")
+        mat[barcodes[cur_barcode], regions[cur_region]] += 1
+    
+    # convert the matrix to a binary matrix
+    mat[ np.where( mat > 1 ) ] = 1    
+    # filter columns and rows without any read count
+    mat_csum = np.sum(mat, axis=0)
+    #sel_y = np.where(mat_csum >= 1)[0].tolist()
+    sel_y = range(i)
+    
+    np.savetxt(prefix+'.mat', mat[:,sel_y], delimiter='\t', fmt="%d")      
+    with open(prefix+'.xgi', 'w') as fout:
+        for x in sorted(barcodes.items(), key=lambda x: x[1]):
+            fout.write(x[0]+'\n')    
+    with open(prefix+'.ygi', 'w') as fout:
+        for x in sel_y: fout.write(regions_rev[x]+'\n')
+
+if __name__ == '__main__':
+    main()
+

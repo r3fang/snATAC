@@ -1,0 +1,363 @@
+#!/bin/bash
+set -e
+
+## snATAC
+## Author(s): Rongxin Fang
+## Contact: r3fang@ucsd.edu
+
+# PART I check weather softwares installed
+command -v python >/dev/null 2>&1 || { echo >&2 "snATAC requires python (2.7) to be installed. Aborting."; exit 1; }
+
+# check version for python and samtools
+PYV=`python -c "import sys;t='{v[0]}.{v[1]}'.format(v=list(sys.version_info[:2]));sys.stdout.write(t)";`
+[ $PYV != "2.7" ] && { echo -e "snATAC requires python 2.7 to be installed. Aborting"; exit 1;}
+STV=`samtools 2>&1 | grep Version |  awk '{print $2}'`
+[ $STV != "1.3" ] && { echo -e "snATAC requires samtools 1.3 to be installed. Aborting"; exit 1;}
+
+# python pacakges
+python -c "import pysam" >/dev/null 2>&1 || { echo -e "snATAC pipeline requires pysam but it's not installed. Aborting"; exit 1;}
+python -c "import pybedtools" >/dev/null 2>&1 || { echo -e "snATAC pipeline requires pybedtools but it's not installed. Aborting"; exit 1;}
+
+function usage {
+	echo -e "Program:  snATAC (snATAC-seq analysis pipeline)"
+	echo -e "Version:  2.0.0"
+	echo -e "Contact:  Rongxin Fang <r3fang@ucsd.edu>"
+	echo -e 
+	echo -e "Usage:    snATAC <command> [options]"
+	echo -e            
+	echo -e "Command:  pre           preprocessing"
+	echo -e "          filter        filter reads with unselected barcodes"
+	echo -e "          bmat          binary accessible matrix"
+	echo -e "          jacard        calculate jacard index matrix"
+	echo -e 
+	echo -e "Optional: decomplex     decomplex the fastq file"
+	echo -e "          bstat         simple statistics for barcode"	
+	echo -e 
+	echo -e "Note: To use scATAC, you need to first decomplex barcode combination and integrate barcode"
+	echo -e "information as the beginning of the read name in R1 and R2 files."
+	echo -e  "This can be done by command 'scATAC_debarcode':"
+	echo -e  
+}
+
+# PART II usage info
+usage_snATAC_pre(){
+cat << EOF
+
+Program: scATAC_pre
+Version: 09.07.2017
+Contact: Rongxin Fang <r3fang@ucsd.edu>
+
+usage: ${0##*/} [-h] [-i INPUT.bam] [-o OUTPUT.bam] [-m MAPQ] [-t THREADS] [-f 2000] [-e 75]
+
+Example:
+snATAC_pre -i INPUT.bam -o OUTPUT.bed.gz -m 30 -t 3 -f 2000 -e 75
+
+Options:
+	-h, --help                  Show this help message and exit.
+	-i  INPUT                   input bam file.
+	-o  OUTPUT                  output bed file.
+	-m  MAPQ                    min mappability [30].
+	-t  THREADS                 threads to use [1].	
+	-f  FLEN                    max fragment length [2000].	
+	-e  ELEN                    extended length [75].	
+EOF
+}
+
+usage_snATAC_bstat(){
+cat << EOF
+
+Program: snATAC_bstat
+Version: 09.07.2017
+Contact: Rongxin Fang <r3fang@ucsd.edu>
+
+usage: ${0##*/} [-h] [-i INPUT.bed] [-r REGION.bed]
+
+Example:
+snATAC_bstat -i INPUT.bed -r REGION.bed
+
+Options:
+	-h, --help                  Show this help message and exit.
+	-i  INPUT                   input bed file.
+	-r  REGION                  interested regions F1.bed,F2.bed seperated by ",". 
+EOF
+}
+
+usage_snATAC_decomplex(){
+cat << EOF
+
+Program: snATAC_decomplex
+Version: 09.07.2017
+Contact: Rongxin Fang <r3fang@ucsd.edu>
+
+usage: ${0##*/} [-h] [-i R1.fastq] [-a I1.fastq] [-b I2.fastq] [-r barcode.txt] [-m 1] [-o R1.decomplex.fastq]
+
+Example:
+snATAC_decomplex -i R1.fastq -a I1.fastq -b I2.fastq -r barcode.txt -m 1 -o R1.decomplex.fastq
+
+Options:
+	-h, --help                  Show this help message and exit.
+	-i  INPUT                   input read fastq file.
+	-a  INDEX1                  input index1 fastq file.
+	-b  INDEX2                  input index2 fastq file.
+	-r  BARCODE                 txt file that contains 4 predefined (i5, i7, r5, r7).
+	-m  XMISMATCH               max allowed mismatch for each index.
+EOF
+}
+
+usage_snATAC_bmat(){
+cat << EOF
+
+Program: snATAC_bmat
+Version: 09.08.2017
+Contact: Rongxin Fang <r3fang@ucsd.edu>
+
+usage: ${0##*/} [-h] [-i INPUT.bed] [-x BARCODE.txt] [-y PEAK.bed] 
+
+Example:
+snATAC_bstat -i INPUT.bed -x BARCODE.txt -y PEAKS.bed
+
+Options:
+	-h, --help                  Show this help message and exit.
+	-i  INPUT                   input bed file that contains reads.
+	-x  BARCODES                barcode for selected nuclei as rows.
+	-y  PEAKS                   peak regions as columns.
+	-p  PREFIX                  prefix of output files.
+EOF
+}
+
+usage_snATAC_jacard(){
+cat << EOF
+
+Program: snATAC_jacard
+Version: 09.08.2017
+Contact: Rongxin Fang <r3fang@ucsd.edu>
+
+usage: ${0##*/} [-h] [-i INPUT.bed] [-x BARCODE.txt] [-y PEAK.bed] 
+
+Example:
+snATAC_jacard -i INPUT.mat -x BARCODE.txt -y PEAKS.bed
+
+Options:
+	-h, --help                  Show this help message and exit.
+	-i  INPUT                   input binary matrix.
+	-x  NUMX                    number of rows.
+	-y  NUMY                    number of columns.
+	-o  OUTPUT                  output files.
+EOF
+}
+
+
+if [ $# -lt 1 ]
+then
+    usage
+    exit
+fi
+
+commands=( pre bstat bmat jacard )
+
+match=0
+for acc in "${commands[@]}"; do
+	if [[ $acc == "$1" ]]; then
+		match=1
+		break
+	fi
+done
+
+if [[ $match = 0 ]]; then
+	echo "unrecognized command $1"
+	exit
+fi
+
+shift $((OPTIND -1))
+
+subcommand=$1; shift  # Remove 'snATAC' from the argument list
+
+case "$subcommand" in
+	# Parse options to the install sub command
+	pre)
+		# default paramaters
+		MAPQ=30
+		THREADS=1
+		FLEN=2000
+		ELEN=75
+		# no options are given
+		if [ $# == 0 ] ; then
+		   usage_snATAC_pre
+		   echo "error: missing arguments"
+		   exit 1
+		fi
+		# no dash line before OPT
+		if [[ ! $@ =~ ^\-.+ ]]; then
+			usage_snATAC_pre
+			echo "err: unrecognized $@"
+			exit 1;
+		fi
+		
+    	while getopts ":i:o:m:t:f:e:h" opt; do
+			case ${opt} in
+				i ) INPUT=$OPTARG;;
+				o ) OUTPUT=$OPTARG;;
+				m ) MAPQ=$OPTARG;;
+				t ) THREADS=$OPTARG;;			
+				f ) FLEN=$OPTARG;;	
+				e ) ELEN=$OPTARG;;							
+				h ) 
+					usage_snATAC_pre
+					exit 1;;
+				\?) usage_snATAC_pre
+					echo "Invalid Option: -$OPTARG"
+					exit 1;;
+		        :)
+		          echo "Invalid Option: -$OPTARG requires an argument" 1>&2
+		          exit 1;;
+			esac
+		done
+		shift $((OPTIND -1))
+		# check for variables
+		if [ ! "$INPUT" ] || [ ! "$OUTPUT" ] || [ ! "$MAPQ" ] || [ ! "$THREADS" ] || [ ! "$FLEN" ] || [ ! "$ELEN" ]
+		then
+		    usage_snATAC_pre
+			echo "error: missing arguments" 1>&2
+		    exit 1
+		fi	
+		snATAC_pre -i $INPUT -o $OUTPUT -m $MAPQ -t $THREADS -f $FLEN -e $ELEN
+		;;
+
+	bstat)
+		# default paramaters
+		if [ $# == 0 ] ; then
+		   usage_snATAC_bstat
+		   echo "error: missing arguments"
+		   exit 1
+		fi
+
+		# no dash line before OPT
+		if [[ ! $@ =~ ^\-.+ ]]; then
+			usage_snATAC_bstat
+			echo "err: unrecognized $@"
+			exit 1;
+		fi
+		
+	  	while getopts ":i:r:h" opt; do
+			case ${opt} in
+				i ) INPUT=$OPTARG;;
+				r ) REGION=$OPTARG;;
+				h ) 
+					usage_snATAC_bstat
+					exit 1;;
+				\? ) 
+					usage_snATAC_bstat
+					echo "err: unrecognized -$OPTARG"
+					exit 1;;
+				: ) 
+					usage_snATAC_bstat
+					echo "Invalid Option: -$OPTARG requires an argument" 1>&2
+		          	exit 1;;					
+			esac
+		done
+		shift $((OPTIND -1))
+		# check for variables
+		if [ ! "$INPUT" ]
+		then
+		    usage_snATAC_bstat
+			echo "error: input arguments" 1>&2
+		    exit 1
+		fi		
+		if [ ! "$REGION" ]
+		then
+			snATAC_bstat -i $INPUT
+		else
+			snATAC_bstat -i $INPUT -r $REGION
+		fi		
+		;;	
+	
+	bmat)
+		# no options are given
+		if [ $# == 0 ] ; then
+		   usage_snATAC_bmat
+		   echo "error: missing arguments"
+		   exit 1
+		fi
+
+		# no dash line before OPT
+		if [[ ! $@ =~ ^\-.+ ]]; then
+			usage_snATAC_bmat
+			echo "err: unrecognized $@"
+			exit 1;
+		fi
+		
+	  	while getopts ":i:x:y:p:h" opt; do
+			case ${opt} in
+				i ) INPUT=$OPTARG;;
+				x )	BARCODE=$OPTARG;;
+				y ) PEAK=$OPTARG;;
+				p ) PREFIX=$OPTARG;;
+				h ) 
+					usage_snATAC_bmat
+					exit 1;;
+				\? ) 
+					usage_snATAC_bmat
+					echo "err: unrecognized -$OPTARG"
+					exit 1;;
+				: ) 
+					usage_snATAC_bmat
+					echo "Invalid Option: -$OPTARG requires an argument" 1>&2
+		          	exit 1;;					
+			esac
+		done
+		shift $((OPTIND -1))
+		# check for variables
+		if [ ! "$INPUT" ] || [ ! "$BARCODE" ] || [ ! "$PEAK" ] || [ ! "$PREFIX" ]
+		then
+		    usage_snATAC_bmat
+			echo "error: missing arguments" 1>&2
+		    exit 1
+		fi		
+		snATAC_bmat -i $INPUT -x $BARCODE -y $PEAK -p $PREFIX
+		;;		
+
+	jacard)
+		# no options are given
+		if [ $# == 0 ] ; then
+		   usage_snATAC_jacard
+		   echo "error: missing arguments"
+		   exit 1
+		fi
+
+		# no dash line before OPT
+		if [[ ! $@ =~ ^\-.+ ]]; then
+			usage_snATAC_jacard
+			echo "err: unrecognized $@"
+			exit 1;
+		fi
+		
+	  	while getopts ":i:x:y:o:h" opt; do
+			case ${opt} in
+				i ) INPUT=$OPTARG;;
+				x )	NUMX=$OPTARG;;
+				y ) NUMY=$OPTARG;;
+				o ) OUTPUT=$OPTARG;;
+				h ) 
+					usage_snATAC_jacard
+					exit 1;;
+				\? ) 
+					usage_snATAC_jacard
+					echo "err: unrecognized -$OPTARG"
+					exit 1;;
+				: ) 
+					usage_snATAC_jacard
+					echo "Invalid Option: -$OPTARG requires an argument" 1>&2
+		          	exit 1;;					
+			esac
+		done
+		shift $((OPTIND -1))
+		# check for variables
+		if [ ! "$INPUT" ] || [ ! "$NUMX" ] || [ ! "$NUMY" ] || [ ! "$OUTPUT" ]
+		then
+		    usage_snATAC_jacard
+			echo "error: missing arguments" 1>&2
+		    exit 1
+		fi		
+		snATAC_jacard $INPUT $NUMX $NUMY $OUTPUT
+		;;	
+esac

@@ -1,0 +1,139 @@
+#!/usr/bin/env python
+
+"""
+correct barcode error in fastq file
+Created by Rongxin Fang
+"""
+import sys
+import gzip
+import bz2
+import os
+import collections
+
+magic_dict = {
+    "\x1f\x8b\x08": "gz",
+    "\x42\x5a\x68": "bz2",
+    "\x50\x4b\x03\x04": "zip"
+    }
+
+max_len = max(len(x) for x in magic_dict)
+
+def file_type(filename):
+    with open(filename) as f:
+        file_start = f.read(max_len)
+    for magic, filetype in magic_dict.items():
+        if file_start.startswith(magic):
+            return filetype
+    return "txt"
+
+def min_dist(s, sl):
+    """ return the string with min edit distance """
+    ss = sl[:]
+    if len(s) == 0: sys.exit("error(min_dist): inquiry string has length 0")
+    if len(ss) == 0: sys.exit("error(min_dist): inquiry string list has 0 elements")
+    if ([len(s) == len(sj) for sj in ss].count(False) > 0): sys.exit("error(min_dist): different string length")
+    dists = [[a == b for (a,b) in zip(s, sj)].count(False) for sj in ss]
+    min_value = min(dists)
+    min_index = dists.index(min(dists))
+    min_s = ss[min_index]
+
+    # find the 2nd min element in the list
+    del dists[min_index]
+    del ss[min_index]
+
+    min_value2 = min(dists)
+    min_index2 = dists.index(min(dists))
+    min_s2 = ss[min_index2]
+    return (min_s, min_value, min_s2, min_value2)
+
+
+def main():
+    """ main function """
+    NUM_TOTAL = 0
+    NUM_USABLE = 0
+
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description='snATAC-seq decomplexing')
+    parser.add_argument('-i', '--input', help='input decomplexed read fastq file', required=True)
+    parser.add_argument('-o', '--output', help='output fastq file', required=True)
+    parser.add_argument('-r', '--barcode', help='txt file that contains predefined indices', required=True)
+    parser.add_argument('-x', '--xmismatch', help='max allowed mismatch', required=True)
+
+    options = parser.parse_args()
+    max_mismatch = 1
+    # input parsing
+    input_fastq = options.input    
+    output_fastq = options.output
+    barcode_txt = options.barcode
+    max_mm = int(options.xmismatch)
+
+    # check if those files exist
+    if not os.path.isfile(input_fastq): exit("error: \'%s\' not exist" % input_fastq)
+    if not os.path.isfile(barcode_txt): exit("error: \'%s\' not exist" % barcode_txt)
+    
+    barcode_list = None
+    with open(barcode_txt, "r") as fin:
+        for line in fin:
+            elems = line.split()
+            if(barcode_list == None): 
+                barcode_list = [[k] for k in elems]
+            else:
+                for i in range(len(elems)):
+                    if "N" not in elems[i]:
+                        barcode_list[i].append(elems[i].upper())    
+    if [len(set(map(len, barcode_list[i]))) == 1 for i in range(len(barcode_list))].count(False) > 0:
+        sys.exit("barcode index has to be of the same length")
+
+    barcode_list_len = [len(barcode_list[i][0]) for i in range(len(barcode_list))]
+    if file_type(input_fastq) == "gz":
+        fin = gzip.open(input_fastq, 'rb')
+    elif file_type(input_fastq) == "bz2":
+        fin = bz2.BZ2File(input_fastq, 'r')
+    elif file_type(input_fastq) == "txt":
+        fin = open(input_fastq, 'r')
+    
+    if output_fastq.endswith("gz"):
+        fout = gzip.open(output_fastq, 'wb')
+    elif output_fastq.endswith("bz2"):
+        fout = bz2.BZ2File(output_fastq, 'w')
+    else:
+        fout = open(output_fastq, 'w')
+    
+    TOTAL_READS = 0
+    USABLE_READS = 0
+    while True:
+        line1 = fin.readline().strip()
+        if(line1 == ""): break
+        cur_r1_read = fin.readline().strip()
+        cur_r1_plus = fin.readline().strip()
+        cur_r1_qual = fin.readline().strip()
+        TOTAL_READS += 1
+        cur_name = "".join(line1.split(":")[1:])
+        cur_barcode = line1.split()[0].split(':')[0][1:]
+        chunks = [0] + [sum(barcode_list_len[:(i+1)]) for i in range(0, len(barcode_list_len))]
+        cur_barcode_list = [cur_barcode[chunks[i]:chunks[i+1]].upper() for i in range(len(chunks)-1)]
+
+        flag = 0
+        for i in xrange(len(cur_barcode_list)):            
+            if not cur_barcode_list[i] in barcode_list[i]:  # if not perfectly matched
+                (opt_match, num_mm, opt_match2, num_mm2) = min_dist(cur_barcode_list[i], barcode_list[i])
+                if num_mm <= max_mm and abs(num_mm2 - num_mm) > 1:
+                    cur_barcode_list[i] = opt_match
+                else:
+                    flag = 1
+        print flag
+        if flag > 0: continue
+        USABLE_READS += 1
+        cur_barcode_corrected = "".join(cur_barcode_list)
+        fout.write('@' + cur_barcode_corrected + ':' + cur_name+"\n")
+        fout.write(cur_r1_read+"\n")
+        fout.write("+\n")
+        fout.write(cur_r1_qual+"\n")
+    
+    fin.close()
+    fout.close()
+    print  >>sys.stderr, "number of total reads               |  ", TOTAL_READS;
+    print  >>sys.stderr, "number of good-barcode reads        |  ", USABLE_READS;
+
+if __name__ == '__main__':
+    main()

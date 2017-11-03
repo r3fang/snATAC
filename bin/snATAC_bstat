@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+
+"""
+simple statics for barcode
+1) number of reads for each barcode
+2) number of reads that overlap with given region
+Created by Rongxin Fang
+"""
+from signal import signal, SIGPIPE, SIG_DFL
+import sys
+import gzip
+import pybedtools
+import os
+import collections 
+
+signal(SIGPIPE,SIG_DFL) 
+
+magic_dict = {
+    "\x1f\x8b\x08": "gz",
+    "\x42\x5a\x68": "bz2",
+    "\x50\x4b\x03\x04": "zip"
+    }
+
+max_len = max(len(x) for x in magic_dict)
+
+def file_type(filename):
+    with open(filename) as f:
+        file_start = f.read(max_len)
+    for magic, filetype in magic_dict.items():
+        if file_start.startswith(magic):
+            return filetype
+    return "no match"
+
+
+def main():
+    from argparse import ArgumentParser
+    # parameters
+    NUM_READS=0
+    NUM_UNIQ=0
+    parser = ArgumentParser(description='snATAC-seq bstats')
+    parser.add_argument('-i', '--input', help='input bed file', required=True)
+    parser.add_argument('-r', '--region', help='interested regions F1.bed,F2.bed')
+    
+    options = parser.parse_args()
+    # input parsing
+    input_bed = options.input
+
+    if(options.region == None):
+        barcode_freq = collections.defaultdict(lambda : 0)
+        fin = gzip.open(input_bed, "rb")
+        
+        if(file_type(input_bed) == "gz"):
+            fin = gzip.open(input_bed, "rb")
+        else:
+            fin = open(input_bed, "r")
+
+        for line in fin:
+            barcode_freq[line.split()[3]] += 1        
+        fin.close()
+        for item in sorted(barcode_freq.keys()):
+            sys.stdout.write("\t".join([item, str(barcode_freq[item])]) + "\n")                     
+    else:
+        feature_list = options.region.split(",")
+        barcode_freq = collections.defaultdict(lambda : 0)
+        barcode_ov = collections.defaultdict(lambda : [0] * len(feature_list))
+        reads = pybedtools.BedTool(input_bed)
+        
+        for i in range(len(feature_list)):
+            features = pybedtools.BedTool(feature_list[i])
+            
+            for line in reads.intersect(features, c=True):
+                barcode = str(line).split()[3]
+                ov = int(str(line).split()[4])
+                if(i == 0): barcode_freq[barcode] += 1
+                if(ov > 0): barcode_ov[barcode][i] += 1
+            
+        for item in sorted(barcode_freq.keys()):
+            freq = "\t".join(map(str, barcode_ov[item]))
+            sys.stdout.write("\t".join([item, str(barcode_freq[item]), freq]) + "\n") 
+
+if __name__ == '__main__':
+    main()

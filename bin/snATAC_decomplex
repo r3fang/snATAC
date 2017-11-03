@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+
+"""
+decomplex by adding barcode to the read name
+Created by Rongxin Fang
+"""
+import sys
+import gzip
+import bz2
+import os
+import collections 
+from signal import signal, SIGPIPE, SIG_DFL
+
+signal(SIGPIPE,SIG_DFL)
+
+magic_dict = {
+    "\x1f\x8b\x08": "gz",
+    "\x42\x5a\x68": "bz2",
+    "\x50\x4b\x03\x04": "zip"
+    }
+
+max_len = max(len(x) for x in magic_dict)
+
+def file_type(filename):
+    with open(filename) as f:
+        file_start = f.read(max_len)
+    for magic, filetype in magic_dict.items():
+        if file_start.startswith(magic):
+            return filetype
+    return "txt"
+
+def main():
+    """ main function """
+    NUM_TOTAL = 0
+    NUM_USABLE = 0
+    
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description='snATAC-seq decomplexing')
+    parser.add_argument('-i', '--input', help='input read fastq file', required=True)
+    parser.add_argument('-a', '--index1', help='index1 fastq file', required=True)
+    parser.add_argument('-b', '--index2', help='index2 fastq file', required=True)
+    parser.add_argument('-o', '--output', help='output fastq file', required=True)
+    
+    options = parser.parse_args()
+    max_mismatch = 1
+    # input parsing
+    input_fastq = options.input
+    index1_fastq = options.index1
+    index2_fastq = options.index2
+    output_fastq = options.output
+    
+    # check if those files exist
+    if not os.path.isfile(input_fastq): exit("error: \'%s\' not exist" % input_fastq)
+    if not os.path.isfile(index1_fastq): exit("error: \'%s\' not exist" % index1_fastq)
+    if not os.path.isfile(index2_fastq): exit("error: \'%s\' not exist" % index2_fastq)
+    
+    if file_type(index1_fastq) == "gz":
+        fi1 = gzip.open(index1_fastq, 'rb')
+    elif file_type(index1_fastq) == "bz2":
+        fi1 = bz2.BZ2File(index1_fastq, 'r')
+    elif file_type(index1_fastq) == "txt":
+        fi1 = open(index1_fastq, 'r')
+
+    if file_type(index2_fastq) == "gz":
+        fi2 = gzip.open(index2_fastq, 'rb')
+    elif file_type(index2_fastq) == "bz2":
+        fi2 = bz2.BZ2File(index2_fastq, 'r')
+    elif file_type(index2_fastq) == "txt":
+        fi2 = open(index2_fastq, 'r')
+
+    if file_type(input_fastq) == "gz":
+        fr1 = gzip.open(input_fastq, 'rb')
+    elif file_type(input_fastq) == "bz2":
+        fr1 = bz2.BZ2File(input_fastq, 'r')
+    elif file_type(input_fastq) == "txt":
+        fr1 = open(input_fastq, 'r')
+    
+    if output_fastq.endswith("gz"):
+        fout = gzip.open(output_fastq, 'wb')
+    elif output_fastq.endswith("bz2"):
+        fout = bz2.BZ2File(output_fastq, 'w')
+    else:
+        fout = open(output_fastq, 'w')            
+            
+    while True:
+        cur_i1_name = fi1.readline().strip()[1:]
+        cur_i1_read = fi1.readline().strip()
+        cur_i1_plus = fi1.readline().strip()
+        cur_i1_qual = fi1.readline().strip()
+    
+        cur_i2_name = fi2.readline().strip()[1:]
+        cur_i2_read = fi2.readline().strip()
+        cur_i2_plus = fi2.readline().strip()
+        cur_i2_qual = fi2.readline().strip()
+    
+        cur_r1_name = fr1.readline().strip()[1:]
+        cur_r1_read = fr1.readline().strip()
+        cur_r1_plus = fr1.readline().strip()
+        cur_r1_qual = fr1.readline().strip()
+            
+        if cur_i1_name == "" or cur_i2_name == "" or cur_r1_name == "": break        
+        if not (cur_i1_name.split()[0] == cur_i2_name.split()[0] == cur_r1_name.split()[0]): sys.exit("error(main): read name not matched")        
+        
+        cur_r7 = cur_i1_read[:8]
+        cur_i7 = cur_i1_read[-8:]
+        cur_i5 = cur_i2_read[:8]
+        cur_r5 = cur_i2_read[-8:]        
+        
+        cur_barcode = cur_r7 + cur_i7 + cur_i5 + cur_r5        
+        fout.write('@' + cur_barcode + ':' + cur_r1_name+"\n")
+        fout.write(cur_r1_read+"\n")
+        fout.write("+\n")
+        fout.write(cur_r1_qual+"\n")
+                
+    fi1.close()
+    fi2.close()
+    fr1.close()
+    fout.close()
+    
+
+if __name__ == '__main__':
+    main()

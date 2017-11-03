@@ -1,0 +1,129 @@
+#!/usr/bin/env python
+
+"""
+Pre-processing including following steps:
+1) sorting by read names
+2) remove duplicates
+3) convert to bed file
+Created by Rongxin Fang
+"""
+import sys
+import gzip
+import pysam
+import os
+import collections 
+
+def is_sorted_queryname(header):
+    """
+    Check if bam fiel is sorted by read name.
+    """
+    if("HD" in header):
+        if("SO" in header["HD"]):
+            if(header["HD"]["SO"] == "queryname"):
+                return True
+    return False
+    
+def main():
+
+    barcode_uniq = collections.defaultdict(lambda : 0)
+    barcode_total = collections.defaultdict(lambda : 0)
+
+    from argparse import ArgumentParser
+    # parameters
+    NUM_READS=0
+    NUM_UNIQ=0
+    NUM_CHRM=0
+    NUM_PAIRED=0
+    NUM_USABLE=0
+    NUM_DISTINCT=0
+    
+    parser = ArgumentParser(description='snATAC-seq preprocessing')
+    parser.add_argument('-i', '--input', help='input bam file', required=True)
+    parser.add_argument('-o', '--output', help='output bed/bed.gz file', required=True)
+    parser.add_argument('-m', '--mapq', help='min mappability score [30]', required=True)
+    parser.add_argument('-t', '--threads', help='number of threads [3]', required=True)
+    parser.add_argument('-f', '--flen', help='maximum fragment length [2000]', required=True)
+    parser.add_argument('-e', '--elen', help='increase -e base pairs in each direction [75]', required=True)
+    
+    options = parser.parse_args()
+
+    num_threads = 1
+    min_mapq = 30
+    max_flen = 2000
+    exlen = 75    
+    # input parsing
+    input_bam = options.input
+    output_bed = options.output
+    num_threads = int(options.threads)
+    min_mapq = int(options.mapq)
+    max_flen = int(options.flen)
+    exlen = int(options.elen)
+    
+    if output_bed.endswith(".gz"):
+        fout = gzip.open(output_bed, "wb")
+    else:
+        fout = open(output_bed, "w")
+        
+    # start reading the bam
+    samfile = pysam.AlignmentFile(input_bam, "rb")
+    if not is_sorted_queryname(samfile.header):
+        input_bam_new = "."+input_bam+".srt"
+        pysam.sort("-n", "\t".join(["-@", str(num_threads)]), "-o", input_bam_new, input_bam)
+        samfile.close()
+        samfile = pysam.AlignmentFile(input_bam_new, "rb")
+
+    genome_size = dict([[item["SN"], int(item["LN"])] for item in samfile.header["SQ"]])
+
+    pre_barcode = ""
+    cur_list = []
+    for read in samfile:
+        NUM_READS += 1
+        if read.is_unmapped: continue
+        cur_barcode = read.qname.split(":")[0]
+        rname  = str(read.reference_name)
+        rstart = str(max(1, read.reference_start - exlen if read.is_reverse else read.reference_start + 4 - exlen))
+        rend   = str(min(genome_size[rname], read.reference_end - 5 + exlen if read.is_reverse else read.reference_end + exlen))
+        if(read.mapq >= min_mapq):
+            NUM_UNIQ += 1
+            if(read.is_paired and (abs(read.isize) <= max_flen) and (read.is_proper_pair)):
+                NUM_PAIRED += 1
+            if(rname == "chrM"):
+                NUM_CHRM += 1
+            if read.is_paired and (read.mapq >= min_mapq) and (rname != "chrM") and (abs(read.isize) <= max_flen) and (read.is_proper_pair):
+                if(pre_barcode == cur_barcode):
+                    cur_list.append((rname, rstart, rend, cur_barcode))
+                    NUM_USABLE += 1
+                    barcode_total[cur_barcode] += 1
+                else:
+                    for item in set(cur_list):
+                        NUM_DISTINCT += 1
+                        barcode_uniq[item[3]] += 1
+                        fout.write("\t".join(list(item))+"\n")
+                    pre_barcode = cur_barcode
+                    cur_list = [(rname, rstart, rend, cur_barcode)]
+                    NUM_USABLE += 1
+                    barcode_total[cur_barcode] += 1
+                                       
+    # don't forget about the last barocode
+    for item in set(cur_list):
+        barcode_uniq[item[3]] += 1
+        NUM_DISTINCT += 1
+        fout.write("\t".join(list(item))+"\n")
+
+    samfile.close()
+    os.remove(input_bam_new)    
+    print  >>sys.stderr, "number of totol reads               |  ", NUM_READS;
+    print  >>sys.stderr, "number of uniquely mapped reads     |  ", NUM_UNIQ;
+    print  >>sys.stderr, "number of properly paired reads     |  ", NUM_PAIRED;
+    print  >>sys.stderr, "number of chrM reads                |  ", NUM_CHRM;
+    print  >>sys.stderr, "number of usable reads              |  ", NUM_USABLE;
+    print  >>sys.stderr, "number of distinct reads            |  ", NUM_DISTINCT;
+    print  >>sys.stderr, "estimated duplicate rate            |  ", 1 - float(NUM_DISTINCT)/NUM_USABLE;
+    
+    # write down the qc file
+    with open(output_bed+".qc", "w") as fout:
+        for barcode in barcode_total:
+            fout.write("\t".join([barcode, str(barcode_uniq[barcode]), str(1 - float(barcode_uniq[barcode])/barcode_total[barcode])]) + "\n") 
+    
+if __name__ == '__main__':
+    main()
