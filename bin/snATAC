@@ -50,7 +50,7 @@ Contact: Rongxin Fang <r3fang@ucsd.edu>
 usage: ${0##*/} [-h] [-i INPUT.bam] [-o OUTPUT.bam] [-m MAPQ] [-t THREADS] [-f 2000] [-e 75]
 
 Example:
-snATAC_pre -i INPUT.bam -o OUTPUT.bed.gz -m 30 -t 3 -f 2000 -e 75
+snATAC_pre -i INPUT.bam -o OUTPUT.bed.gz -m 30 -t 3 -f 2000 -e 75 -s pair
 
 Options:
 	-h, --help                  Show this help message and exit.
@@ -58,6 +58,7 @@ Options:
 	-o  OUTPUT                  output bed file.
 	-m  MAPQ                    min mappability [30].
 	-t  THREADS                 threads to use [1].	
+	-s  MODE                   single or pair end sequencing [pair].	
 	-f  FLEN                    max fragment length [2000].	
 	-e  ELEN                    extended length [75].	
 EOF

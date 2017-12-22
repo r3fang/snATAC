@@ -59,11 +59,12 @@ def main():
     max_flen = int(options.flen)
     exlen = int(options.elen)
     
+        
     if output_bed.endswith(".gz"):
         fout = gzip.open(output_bed, "wb")
     else:
         fout = open(output_bed, "w")
-        
+    
     # start reading the bam
     samfile = pysam.AlignmentFile(input_bam, "rb")
     if not is_sorted_queryname(samfile.header):
@@ -76,6 +77,7 @@ def main():
 
     pre_barcode = ""
     cur_list = []
+    
     for read in samfile:
         NUM_READS += 1
         if read.is_unmapped: continue
