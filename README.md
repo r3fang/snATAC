@@ -265,7 +265,7 @@ write.table(b, file = "p56.rep1.tsne", append = FALSE,
             col.names = FALSE, qmethod = c("escape", "double"),
             fileEncoding = "")
 ```
-![plot](http://renlab.sdsc.edu/r3fang/snATAC/Rplots_tsne.pdf)
+![plot](https://github.com/r3fang/snATAC/blob/master/images/Rplot_tsne.png)
 
 Step 9. Density-based clustering
 
@@ -326,7 +326,7 @@ irisClust <- densityClust(dis, gaussian=TRUE)
 # plot decision graph
 plot(irisClust)
 ```
-![Decision Graph](http://renlab.sdsc.edu/r3fang/snATAC/Rplots_decision_graph.pdf)
+![Decision Graph](https://github.com/r3fang/snATAC/blob/master/images/Rplot_decision_graph.png)
 
 ```R
 # continue above code
@@ -347,7 +347,7 @@ write.table(data.frame(cluster), file = "p56.rep1.cluster",
             fileEncoding = "")
 ```
 
-![cluster](http://renlab.sdsc.edu/r3fang/snATAC/Rplots_cluster.pdf)
+![cluster](https://github.com/r3fang/snATAC/blob/master/images/Rplot_cluster.png)
 
 ## Cite us
 Preissl S.\*, Fang R.\*, Zhao Y., Raviram R., Zhang Y., Brandon C.S., Huang H., Gorkin D.U., Afzal V., Dickel D.E., Kuan S., Visel A., Pennacchio L.A., Zhang K., Ren B. **Single nucleus analysis of the chromatin landscape in mouse forebrain development**. bioRxiv 159137; doi: https://doi.org/10.1101/159137. (* contributed equally)
