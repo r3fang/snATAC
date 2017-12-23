@@ -58,7 +58,6 @@ Options:
 	-o  OUTPUT                  output bed file.
 	-m  MAPQ                    min mappability [30].
 	-t  THREADS                 threads to use [1].	
-	-s  MODE                   single or pair end sequencing [pair].	
 	-f  FLEN                    max fragment length [2000].	
 	-e  ELEN                    extended length [75].	
 EOF
