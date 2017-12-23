@@ -64,17 +64,17 @@ def chunkIt(seq, num):
 def main():
     from argparse import ArgumentParser
     # parameters 
-    parser = ArgumentParser(description='extract valid pair from a name-sorted bam file')
+    parser = ArgumentParser(description='generate binary accessibility matrix')
     parser.add_argument('-i', '--input', help='bed file contains read', required=True)
-    parser.add_argument('-x', '--barcode', help='rows: txt file contains selected cell barcode', required=True)
-    parser.add_argument('-y', '--peak', help='columns: bed file contains peaks', required=True)
-    parser.add_argument('-p', '--prefix', help='prefix of output file', required=True)
+    parser.add_argument('-x', '--barcode', help='rows: file contains selected cell barcode', required=True)
+    parser.add_argument('-y', '--peak', help='columns: file contains selected peaks', required=True)
+    parser.add_argument('-o', '--output', help='output file', required=True)
     options = parser.parse_args()
     # input parsing
     read_bed = options.input
     peak_bed = options.peak
     barcode_txt = options.barcode
-    prefix = options.prefix
+    output = options.output
     # read peaks and reads
     peaks = pybedtools.BedTool(peak_bed)
     reads = pybedtools.BedTool(read_bed)
@@ -121,18 +121,8 @@ def main():
  
     # convert the matrix to a binary matrix
     mat[ np.where( mat > 1 ) ] = 1    
-    # calculate row and colum sums
-    mat_rsum = list(np.squeeze(np.asarray(np.sum(mat, axis=1))))
-    mat_csum = list(np.squeeze(np.asarray(np.sum(mat, axis=0))))
     
-    np.savetxt(prefix+'.mat', mat, delimiter='\t', fmt="%d")      
-    with open(prefix+'.xgi', 'w') as fout:
-        for x in sorted(barcodes.items(), key=lambda x: x[1]):
-            fout.write(x[0] + "\t" + str(int(mat_rsum[x[1]]))+'\n')    
-
-    with open(prefix+'.ygi', 'w') as fout:
-        for x in sorted(regions.items(), key=lambda x: x[1]):
-            fout.write(x[0] + "\t" + str(int(mat_csum[x[1]]))+'\n')
+    np.savetxt(output, mat, delimiter='\t', fmt="%d")      
     
 if __name__ == '__main__':
     main()

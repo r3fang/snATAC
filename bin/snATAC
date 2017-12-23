@@ -114,14 +114,14 @@ Contact: Rongxin Fang <r3fang@ucsd.edu>
 usage: ${0##*/} [-h] [-i INPUT.bed] [-x BARCODE.txt] [-y PEAK.bed] 
 
 Example:
-snATAC_bstat -i INPUT.bed -x BARCODE.txt -y PEAKS.bed
+snATAC_bmat -i INPUT.bed -x BARCODE.xgi -y PEAKS.ygi -o OUTPUT.mat
 
 Options:
 	-h, --help                  Show this help message and exit.
 	-i  INPUT                   input bed file that contains reads.
 	-x  BARCODES                barcode for selected nuclei as rows.
 	-y  PEAKS                   peak regions as columns.
-	-p  PREFIX                  prefix of output files.
+	-o  OUTPUT                  OUTPUT matrix file.
 EOF
 }
 
@@ -286,12 +286,12 @@ case "$subcommand" in
 			exit 1;
 		fi
 		
-	  	while getopts ":i:x:y:p:h" opt; do
+	  	while getopts ":i:x:y:o:h" opt; do
 			case ${opt} in
 				i ) INPUT=$OPTARG;;
 				x )	BARCODE=$OPTARG;;
 				y ) PEAK=$OPTARG;;
-				p ) PREFIX=$OPTARG;;
+				o ) OUTPUT=$OPTARG;;
 				h ) 
 					usage_snATAC_bmat
 					exit 1;;
@@ -307,13 +307,13 @@ case "$subcommand" in
 		done
 		shift $((OPTIND -1))
 		# check for variables
-		if [ ! "$INPUT" ] || [ ! "$BARCODE" ] || [ ! "$PEAK" ] || [ ! "$PREFIX" ]
+		if [ ! "$INPUT" ] || [ ! "$BARCODE" ] || [ ! "$PEAK" ] || [ ! "$OUTPUT" ]
 		then
 		    usage_snATAC_bmat
 			echo "error: missing arguments" 1>&2
 		    exit 1
 		fi		
-		snATAC_bmat -i $INPUT -x $BARCODE -y $PEAK -p $PREFIX
+		snATAC_bmat -i $INPUT -x $BARCODE -y $PEAK -o $OUTPUT
 		;;		
 
 	jacard)
