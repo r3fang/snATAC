@@ -12,6 +12,7 @@ snATAC is a Ren-lab in-house analysis pipeline for single-nucleus ATAC-seq (snAT
 > git clone --depth=1 https://github.com/r3fang/snATAC.git
 > cd snATAC
 > chmod u+x bin/*
+> gcc -g -O2 src/calculate_jacard_index_matrix.c -o bin/snATAC_jacard
 > export PATH=$PATH:./bin/
 > ./bin/snATAC
 
@@ -40,7 +41,7 @@ read name in both R1 and R2 fastq files.
 ## Pipeline
 **snATAC** has following steps:
 
-1. Maping using [bwa](https://github.com/lh3/bwa) or [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) (output.bam);
+1. Alignment by [bwa](https://github.com/lh3/bwa) or [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) (output.bam);
 2. Pre-processing (output.bed/output.qc);
 	* Alignment filteration
 	* Speration of single cell
@@ -49,13 +50,13 @@ read name in both R1 and R2 fastq files.
 	* Adjusting position of Tn5 insertion
 	* Create a master .bed file
 	* Create a .qc file
-3. Identify enrichment regions (output.txt);
+3. Identify feature candidates (output.txt);
 	* Call peaks using MACS2 from ensemble data
 4. Calculate barcode statistics;
 	* Reads per barcode
 	* Consecutive promoter coverage
 	* Reads in peak ratio
-4. Cell (barcode) selection (output.xgi);
+4. Barcode selection (output.xgi);
 	* Reads per barcode >= 1000
 	* Consecutive promoter coverage > 5%
 	* Reads in peak ratio >= 20%
@@ -94,19 +95,19 @@ Step 2. Pre-processing.
 ```bash
 > ./bin/snATAC pre -t 5 -m 30 -f 2000 -e 75 \
                    -i p56.rep1.bam \
-                   -o p56.rep1.bed.gz 2> p56.pre.log
+                   -o p56.rep1.bed.gz 2> p56.rep1.pre.log
 ```
-This will output two files p56.pre.bed.gz and p56.pre.log contains basic quality control. Below is one example of p56.pre.log.
+This will output two files p56.pre.bed.gz and p56.rep1.pre.log. p56.pre.bed.gz contains reads and barcode, p56.rep1.pre.log contains basic quality control. Below is one example of p56.rep1.pre.log.
 
 | p56.pre.log                         |          |
 |:------------------------------------|:----------------|
-| number of totol reads               |   210545337     |
-| number of uniquely mapped reads     |   193513006     |
-| number of properly paired reads     |   191507619     |
-| number of chrM reads                |   2571611       |
-| number of usable reads              |   188976583     |
-| number of distinct reads            |   48747463      |
-| estimated duplicate rate            |   0.74          |
+| number of totol reads               |   217064143     |
+| number of uniquely mapped reads     |   191813608     |
+| number of properly paired reads     |   189561202     |
+| number of chrM reads                |   5334929       |
+| number of usable reads              |   184310563     |
+| number of distinct reads            |   52036692      |
+| estimated duplicate rate            |   0.71          |
 
 
 Step 3. Identify peaks from ensemble signal
@@ -117,12 +118,6 @@ Step 3. Identify peaks from ensemble signal
                  -g mm -p 0.05 \
                  --nomodel --shift 150 \
                  --keep-dup all    
-                   
-# extend peaks to 1kb from the summit
-> bedtools flank -b 500 -g mm10.genome.size \
-                 -i p56.rep1_summits.bed \
-                 | sort -k1,1 -k2,2n - \
-                 | bedtools merge -i - > p56.rep1.txt
 ```
 
 Step 4. Cell (barcode) selection (output.xgi)
@@ -177,9 +172,7 @@ qc$promoter[match(promoters$V1, qc$barcode)] =
 	promoters$V2/nrow(consecutive_promoters)
 qc$read_in_peak[match(ratios$V1, qc$barcode)] = ratios$V2
 qc$ratio = qc$read_in_peak/qc$reads
-idx <- which(qc$promoter > 0.03 & 
-             qc$read_in_peak > 0.2 & 
-             qc$reads > 1000)
+idx <- which(qc$promoter > 0.03 & qc$read_in_peak > 0.2 & qc$reads > 1000)
 qc_sel <- qc[idx,]
 
 # among these cells, further filter barcodes with 
@@ -225,7 +218,7 @@ write.table(peaks.sel.ex.df, file = "p56.rep1.ygi",
 Step 6. Generate binary accessibility matrix (**NOTE: this may require large RAM**)
 
 ```bash
-> snATAC bmat -i p56.rep1.bed.gz \
+> ./bin/snATAC bmat -i p56.rep1.bed.gz \
               -x p56.rep1.xgi \
               -y p56.rep1.ygi \
               -o p56.rep1.mat
@@ -239,7 +232,7 @@ Step 7. Calculate jaccard index
 # mannually count number of columns (184,519)
 > wc -l p56.rep1.ygi
 # calculate jaccard index matrix
-> snATAC jacard -i p56.rep1.mat -x 1464 -y 184519 -o p56.rep1.jacard
+> ./bin/snATAC jacard -i p56.rep1.mat -x 1464 -y 184519 -o p56.rep1.jacard
 ```
 
 Step 8. Dimentionality reduction (R)
@@ -268,9 +261,25 @@ write.table(b, file = "p56.rep1.tsne", append = FALSE,
 ![plot](https://github.com/r3fang/snATAC/blob/master/images/Rplot_tsne.png)
 
 Step 9. Density-based clustering
-
+   
 ```{R}
 > R
+##################################################################
+# NOTE: Choosing cluster number is absolutely an art! In our paper, we
+# adopted a method originally published from Habib et al. that
+# determines the best cluster number by optimizing Dunn Index.
+# However, such approach is extremely slow with time complexity
+# O(n^3), without optimization and better implementation, it is
+# almost impossible to run on a sample of thousands of cells.
+# Therefore, we decided to switch to a heuristic approach as shown
+# below. Though, it does not guarantee the best result (in fact, none
+# of the methods do), from our experience, it gives satisfactory
+# result. At the end of the day, choosing the optimal cluster number
+# is very tricky task and it is hard to be fully automatic. We still
+# post our code for Dunn Index approach as described in our paper. 
+##################################################################
+
+
 library(densityClust)
 MaxStep <- function(D){
 	D_hat <- D
