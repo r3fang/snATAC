@@ -70,8 +70,7 @@ read name in both R1 and R2 fastq files.
 8. Dimentionality reduction (output.tsne);
 9. Density-based clustering (output.cluster);
 
-## A complete example
-
+## A Complete Example
 Step 0. Download sample data.     
 
 ```bash
@@ -362,8 +361,47 @@ write.table(data.frame(cluster), file = "p56.rep1.cluster",
 
 ![cluster](https://github.com/r3fang/snATAC/blob/master/images/Rplot_cluster.png)
 
+## File Organization
+
+```bash
+.
+# raw data
+|____p56.rep1.R1.decomplex.fastq.gz
+|____p56.rep1.R2.decomplex.fastq.gz
+# pre-defined features for mm10
+|____mm10
+| |____mm10.genome.size
+| |____mm10_consecutive_promoters.bed
+| |____mm10.refSeq_promoter.bed
+# output from alignment
+|____p56.rep1.bam
+# output from pre-proessing
+|____p56.rep1.log
+|____p56.rep1.bed.gz
+# output from MACS2
+|____p56.rep1_peaks.xls
+|____p56.rep1_peaks.narrowPeak
+|____p56.rep1_summits.bed
+# output from barcode stats
+|____p56.rep1.reads_in_peak
+|____p56.rep1.promoter_cov
+|____p56.rep1.reads_per_cell
+# output from barcode selection
+|____p56.rep1.xgi
+# output from feature selection
+|____p56.rep1.ygi
+# output from binary accessibility matrix
+|____p56.rep1.mat
+# output from jaccard matrix
+|____p56.rep1.jacard
+# output from dimentionality reduction
+|____p56.rep1.tsne
+# output from clustering
+|____p56.rep1.cluster
+```
+
 ## Cite us
-Preissl S.\*, Fang R.\*, Zhao Y., Raviram R., Zhang Y., Brandon C.S., Huang H., Gorkin D.U., Afzal V., Dickel D.E., Kuan S., Visel A., Pennacchio L.A., Zhang K., Ren B. **Single nucleus analysis of the chromatin landscape in mouse forebrain development**. bioRxiv 159137; doi: https://doi.org/10.1101/159137. (* contributed equally)
+Preissl S.\*, Fang R.\*, Zhao Y., Raviram R., Zhang Y., Brandon C.S., Huang H., Gorkin D.U., Afzal V., Dickel D.E., Kuan S., Visel A., Pennacchio L.A., Zhang K., Ren B. **Single nucleus analysis of the chromatin landscape in mouse forebrain development**. bioRxiv 159137; doi: https://doi.org/10.1101/159137. (*contributed equally)
 
 
 
