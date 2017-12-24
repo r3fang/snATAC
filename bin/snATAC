@@ -18,25 +18,31 @@ STV=`samtools 2>&1 | grep Version |  awk '{print $2}'`
 python -c "import pysam" >/dev/null 2>&1 || { echo -e "snATAC pipeline requires pysam but it's not installed. Aborting"; exit 1;}
 python -c "import pybedtools" >/dev/null 2>&1 || { echo -e "snATAC pipeline requires pybedtools but it's not installed. Aborting"; exit 1;}
 
-function usage {
-	echo -e "Program:  snATAC (snATAC-seq analysis pipeline)"
-	echo -e "Version:  2.0.0"
-	echo -e "Contact:  Rongxin Fang <r3fang@ucsd.edu>"
-	echo -e 
-	echo -e "Usage:    snATAC <command> [options]"
-	echo -e            
-	echo -e "Command:  pre           preprocessing"
-	echo -e "          filter        filter reads with unselected barcodes"
-	echo -e "          bmat          binary accessible matrix"
-	echo -e "          jacard        calculate jacard index matrix"
-	echo -e 
-	echo -e "Optional: decomplex     decomplex the fastq file"
-	echo -e "          bstat         simple statistics for barcode"	
-	echo -e 
-	echo -e "Note: To use scATAC, you need to first decomplex barcode combination and integrate barcode"
-	echo -e "information as the beginning of the read name in R1 and R2 files."
-	echo -e  "This can be done by command 'scATAC_debarcode':"
-	echo -e  
+
+usage(){
+cat << EOF
+Program:  snATAC (snATAC-seq analysis pipeline)
+Version:  12.24.2017
+Contact:  Rongxin Fang <r3fang@ucsd.edu>
+          Sebastian Preissl <spreissl@ucsd.edu>
+          Bing Ren <biren@ucsd.edu>
+          
+Usage:    snATAC <command> [options]
+
+Command:  pre           preprocessing
+          filter        filter reads with unselected barcodes
+          bmat          binary accessible matrix
+          jacard        jaccard index matrix
+
+Optional (under development): 
+          decomplex     decomplex the fastq file
+          bstat         simple statistics for barcode
+
+Note: To use snATAC pipeline, you need to first decomplex barcode
+combination and integrate barcodes to the beginning of the
+read name in both R1 and R2 fastq files.
+
+EOF
 }
 
 # PART II usage info

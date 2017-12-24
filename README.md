@@ -1,5 +1,5 @@
 ## Introduction
-snATAC is a Ren-lab in-house analysis pipeline for single-nucleus ATAC-seq (snATAC-seq).
+snATAC is a Ren-lab in-house bioinformatics pipeline for single-nucleus ATAC-seq (snATAC-seq).
 
 ## Requirements
 
@@ -17,11 +17,11 @@ snATAC is a Ren-lab in-house analysis pipeline for single-nucleus ATAC-seq (snAT
 > ./bin/snATAC
 
 Program:  snATAC (snATAC-seq analysis pipeline)
-Version:  2.0.0
+Version:  12.24.2017
 Contact:  Rongxin Fang <r3fang@ucsd.edu>
           Sebastian Preissl <spreissl@ucsd.edu>
           Bing Ren <biren@ucsd.edu>
-          
+
 Usage:    snATAC <command> [options]
 
 Command:  pre           preprocessing
@@ -29,7 +29,7 @@ Command:  pre           preprocessing
           bmat          binary accessible matrix
           jacard        jaccard index matrix
 
-Optional (under development): 
+Optional (under development):
           decomplex     decomplex the fastq file
           bstat         simple statistics for barcode
 
@@ -124,11 +124,10 @@ Step 4. Calculate barcode statistics
 ```bash
 ##################################################################
 # calculate 3 major barcode stats
-# 1) count number of reads per barcode
+# 1) number of reads
 # 2) consecutive promoter coverage 
 # 3) reads in peak ratio
 ##################################################################
-
 # count number of reads per barcode
 > zcat p56.rep1.bed.gz | awk '{print $4}' \
                | sort \
@@ -161,29 +160,30 @@ Step 5. Cell selection (output.xgi)
 ```R
 > R
 ##################################################################
-# Reads per barcode >= 1000
-# Consecutive promoter coverage > 3%
-# Reads in peak ratio >= 20%
+# 1) reads per barcode >= 1000
+# 2) consecutive promoter coverage > 3%
+# 3) reads in peak ratio >= 20%
 # NOTE: The cutoff can vary singificantly between different samples
+# 4) filter potential doublets
 ##################################################################
 
 consecutive_promoters <- read.table("mm10/mm10_consecutive_promoters.bed")
-reads = read.table("p56.rep1.reads_per_cell")
-promoters = read.table("p56.rep1.promoter_cov")
-ratios = read.table("p56.rep1.reads_in_peak")
-qc = reads; colnames(qc) <- c("barcode", "reads")
-qc$promoter = 0; 
+num_of_reads = read.table("p56.rep1.reads_per_cell")
+promoter_cov = read.table("p56.rep1.promoter_cov")
+read_in_peak = read.table("p56.rep1.reads_in_peak")
+qc = num_of_reads; 
+colnames(qc) <- c("barcode", "num_of_reads")
+qc$promoter_cov = 0; 
 qc$read_in_peak = 0;
-qc$promoter[match(promoters$V1, qc$barcode)] = 
-	promoters$V2/nrow(consecutive_promoters)
-qc$read_in_peak[match(ratios$V1, qc$barcode)] = ratios$V2
-qc$ratio = qc$read_in_peak/qc$reads
-idx <- which(qc$promoter > 0.03 & qc$read_in_peak > 0.2 & qc$reads > 1000)
+qc$promoter_cov[match(promoter_cov$V1, qc$barcode)] = promoter_cov$V2/nrow(consecutive_promoters)
+qc$read_in_peak[match(read_in_peak$V1, qc$barcode)] = read_in_peak$V2
+qc$ratio = qc$read_in_peak/qc$num_of_reads
+idx <- which(qc$promoter_cov > 0.03 & qc$ratio > 0.2 & qc$num_of_reads > 1000)
 qc_sel <- qc[idx,]
 
 # among these cells, further filter barcodes with 
-pvalues <- sapply(qc_sel$reads, function(x) 
-           poisson.test(x, mean(qc_sel$reads), 
+pvalues <- sapply(qc_sel$num_of_reads, function(x) 
+           poisson.test(x, mean(qc_sel$num_of_reads), 
            alternative="greater")$p.value)
 fdrs <- p.adjust(pvalues, "BH")
 idx <- which(fdrs < 1e-2)
@@ -199,6 +199,11 @@ Step 5. Feature selection (output.xgi);
 
 ```R
 > R
+##################################################################
+# 1) Filter top 5% peaks
+# 2) Filter promoters
+# 3) extend and merge
+##################################################################
 library(GenomicRanges)
 peaks.df <- read.table("p56.rep1_peaks.narrowPeak")
 # remove top 5% peaks
@@ -225,9 +230,9 @@ Step 6. Generate binary accessibility matrix (**NOTE: this may require large RAM
 
 ```bash
 > ./bin/snATAC bmat -i p56.rep1.bed.gz \
-              -x p56.rep1.xgi \
-              -y p56.rep1.ygi \
-              -o p56.rep1.mat
+                    -x p56.rep1.xgi \
+                    -y p56.rep1.ygi \
+                    -o p56.rep1.mat
 ```
 
 Step 7. Calculate jaccard index
@@ -246,6 +251,13 @@ Step 8. Dimentionality reduction (R)
 
 ```{R}
 > R
+##################################################################
+# Dimentionality reduction using t-SNE
+# Please refer to https://lvdmaaten.github.io/tsne/ for how to
+# tune parameters such as perplexity. We find most of time, it 
+# takes less than 500 iteration to converge.
+##################################################################
+
 library(tsne)
 
 data <- as.matrix(read.table("p56.rep1.jacard"))
@@ -338,7 +350,6 @@ irisClust <- densityClust(dis, gaussian=TRUE)
 # plot decision graph
 plot(irisClust)
 ```
-![Decision Graph](https://github.com/r3fang/snATAC/blob/master/images/Rplot_decision_graph.png)
 
 ```R
 # continue above code
@@ -401,7 +412,7 @@ write.table(data.frame(cluster), file = "p56.rep1.cluster",
 ```
 
 ## Cite us
-Preissl S.\*, Fang R.\*, Zhao Y., Raviram R., Zhang Y., Brandon C.S., Huang H., Gorkin D.U., Afzal V., Dickel D.E., Kuan S., Visel A., Pennacchio L.A., Zhang K., Ren B. **Single nucleus analysis of the chromatin landscape in mouse forebrain development**. bioRxiv 159137; doi: https://doi.org/10.1101/159137. (*contributed equally)
+Preissl S.\*, Fang R.\*, Zhao Y., Raviram R., Zhang Y., Brandon C.S., Huang H., Gorkin D.U., Afzal V., Dickel D.E., Kuan S., Visel A., Pennacchio L.A., Zhang K., Ren B. **Single nucleus analysis of the chromatin landscape in mouse forebrain development**. bioRxiv 159137; doi: https://doi.org/10.1101/159137. (* contributed equally)
 
 
 
