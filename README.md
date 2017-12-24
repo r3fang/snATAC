@@ -72,7 +72,7 @@ read name in both R1 and R2 fastq files.
 
 ## A complete example
 
-Step 0. download the sample data.     
+Step 0. Download sample data.     
 
 ```bash
 > wget http://renlab.sdsc.edu/r3fang/snATAC/p56.rep1.R1.decomplex.fastq.gz
@@ -81,7 +81,7 @@ Step 0. download the sample data.
 > tar -xvzf mm10.tar.gz
 ```
 
-Step 1. Mapping using bwa (or bowtie2) in pair-end mode without any filteration.
+Step 1. Alignment using bwa (or bowtie2) in pair-end.
 
 ```bash
 > bwa mem -t 1 mm10.fa \
@@ -97,7 +97,7 @@ Step 2. Pre-processing.
                    -i p56.rep1.bam \
                    -o p56.rep1.bed.gz 2> p56.rep1.pre.log
 ```
-This will output two files p56.pre.bed.gz and p56.rep1.pre.log. p56.pre.bed.gz contains reads and barcode, p56.rep1.pre.log contains basic quality control. Below is one example of p56.rep1.pre.log.
+``./bin/snATAC pre`` will output two files p56.pre.bed.gz and p56.rep1.pre.log. p56.pre.bed.gz contains read and corresponding barcode, p56.rep1.pre.log contains basic quality control. Below is one example of p56.rep1.pre.log.
 
 | p56.pre.log                         |          |
 |:------------------------------------|:----------------|
@@ -110,7 +110,7 @@ This will output two files p56.pre.bed.gz and p56.rep1.pre.log. p56.pre.bed.gz c
 | estimated duplicate rate            |   0.71          |
 
 
-Step 3. Identify peaks from ensemble signal
+Step 3. Identify feature candidates (output.txt)
 
 ```bash
 > macs2 callpeak -t p56.rep1.bed.gz \
@@ -120,9 +120,16 @@ Step 3. Identify peaks from ensemble signal
                  --keep-dup all    
 ```
 
-Step 4. Cell (barcode) selection (output.xgi)
+Step 4. Calculate barcode statistics
 
 ```bash
+##################################################################
+# calculate 3 major barcode stats
+# 1) count number of reads per barcode
+# 2) consecutive promoter coverage 
+# 3) reads in peak ratio
+##################################################################
+
 # count number of reads per barcode
 > zcat p56.rep1.bed.gz | awk '{print $4}' \
                | sort \
@@ -241,7 +248,6 @@ Step 8. Dimentionality reduction (R)
 ```{R}
 > R
 library(tsne)
-library(parallel)
 
 data <- as.matrix(read.table("p56.rep1.jacard"))
 diag(data) <- 0
@@ -251,7 +257,6 @@ b = tsne(data/sum(data), initial_config = NULL,
 		  whiten = TRUE, epoch=100)
 
 plot(b, cex=0.7, xlab="tsne1", ylab="tsne2")
-
 write.table(b, file = "p56.rep1.tsne", append = FALSE, 
             quote = FALSE, sep = "\t", eol = "\n", 
             na = "NA", dec = ".", row.names = FALSE,
@@ -265,20 +270,19 @@ Step 9. Density-based clustering
 ```{R}
 > R
 ##################################################################
-# NOTE: Choosing cluster number is absolutely an art! In our paper, we
-# adopted a method originally published from Habib et al. that
+# NOTE: Choosing cluster number is absolutely an art! In our paper, 
+# we adopted a method originally published from Habib et al. that
 # determines the best cluster number by optimizing Dunn Index.
 # However, such approach is extremely slow with time complexity
 # O(n^3), without optimization and better implementation, it is
 # almost impossible to run on a sample of thousands of cells.
 # Therefore, we decided to switch to a heuristic approach as shown
-# below. Though, it does not guarantee the best result (in fact, none
-# of the methods do), from our experience, it gives satisfactory
+# below. Though, it does not guarantee the best result (in fact, 
+# none of the methods do), from our experience, it gives satisfactory
 # result. At the end of the day, choosing the optimal cluster number
 # is very tricky task and it is hard to be fully automatic. We still
 # post our code for Dunn Index approach as described in our paper. 
 ##################################################################
-
 
 library(densityClust)
 MaxStep <- function(D){
