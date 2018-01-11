@@ -11,8 +11,8 @@ command -v python >/dev/null 2>&1 || { echo >&2 "snATAC requires python (2.7) to
 # check version for python and samtools
 PYV=`python -c "import sys;t='{v[0]}.{v[1]}'.format(v=list(sys.version_info[:2]));sys.stdout.write(t)";`
 [ $PYV != "2.7" ] && { echo -e "snATAC requires python 2.7 to be installed. Aborting"; exit 1;}
-STV=`samtools 2>&1 | grep Version |  awk '{print $2}'`
-[ $STV != "1.3" ] && { echo -e "snATAC requires samtools 1.3 to be installed. Aborting"; exit 1;}
+#STV=`samtools 2>&1 | grep Version |  awk '{print $2}'`
+#[ $STV != "1.3" ] && { echo -e "snATAC requires samtools 1.3 to be installed. Aborting"; exit 1;}
 
 # python pacakges
 python -c "import pysam" >/dev/null 2>&1 || { echo -e "snATAC pipeline requires pysam but it's not installed. Aborting"; exit 1;}
