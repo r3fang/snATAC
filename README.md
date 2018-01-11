@@ -3,7 +3,7 @@ snATAC is a Ren-lab in-house bioinformatics pipeline for single-nucleus ATAC-seq
 
 ## Requirements
 
-- softwares ([samtools 1.2](http://www.htslib.org/doc/samtools.html), [Python 2.7](https://www.python.org/download/releases/2.7/), [bedtools](http://bedtools.readthedocs.io/en/latest/), [MACS2](https://github.com/taoliu/MACS), [bwa](https://github.com/lh3/bwa))
+- softwares ([samtools](http://www.htslib.org/doc/samtools.html), [Python 2.7](https://www.python.org/download/releases/2.7/), [bedtools](http://bedtools.readthedocs.io/en/latest/), [MACS2](https://github.com/taoliu/MACS), [bwa](https://github.com/lh3/bwa))
 - python packages ([pysam](http://pysam.readthedocs.io/en/latest/api.html), [pybedtools](https://daler.github.io/pybedtools/))
 - R packages ([tsne](https://cran.r-project.org/web/packages/tsne/index.html), [GenomicRanges](https://bioconductor.org/packages/release/bioc/html/GenomicRanges.html), [densityClust](https://cran.r-project.org/web/packages/densityClust/index.html))
 
