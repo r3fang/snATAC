@@ -349,10 +349,7 @@ dis <- dist(points)
 irisClust <- densityClust(dis, gaussian=TRUE)
 # plot decision graph
 plot(irisClust)
-```
 
-```R
-# continue above code
 rho_cutoff <- irisClust$dc
 delta_cutoff <- 20
 irisClust <- findClusters(irisClust, 
