@@ -7,6 +7,7 @@ set -e
 
 # PART I check weather softwares installed
 command -v python >/dev/null 2>&1 || { echo >&2 "snATAC requires python (2.7) to be installed. Aborting."; exit 1; }
+#command -v samtools >/dev/null 2>&1 || { echo >&2 "snATAC requires samtools to be installed. Aborting."; exit 1; }
 
 # check version for python and samtools
 PYV=`python -c "import sys;t='{v[0]}.{v[1]}'.format(v=list(sys.version_info[:2]));sys.stdout.write(t)";`
