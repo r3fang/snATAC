@@ -116,7 +116,7 @@ Step 3. Identify feature candidates (output.txt)
                  -f BED -n p56.rep1 \
                  -g mm -p 0.05 \
                  --nomodel --shift 150 \
-                 --keep-dup all    
+                 --keep-dup all
 ```
 
 Step 4. Calculate barcode statistics
@@ -146,7 +146,7 @@ Step 4. Calculate barcode statistics
                | awk '{print $2, $1}' \
                | sort -k1,1 > p56.rep1.promoter_cov 
 # reads in peak ratio
-> intersectBed -a p56.rep1.bed.gz -b p56.rep1.txt -u \
+> intersectBed -a p56.rep1.bed.gz -b p56.rep1_peaks.narrowPeak -u \
                | awk '{print $4}' \
                | sort \
                | uniq -c \
