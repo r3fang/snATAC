@@ -164,7 +164,7 @@ Step 5. Cell selection (output.xgi)
 # 2) consecutive promoter coverage > 3%
 # 3) reads in peak ratio >= 20%
 # NOTE: The cutoff can vary singificantly between different samples
-# 4) filter potential doublets
+# 4) filter potential doublets (OPTIONAL NOT SUGGUESTED, UNSTABLE)
 ##################################################################
 
 consecutive_promoters <- read.table("mm10/mm10_consecutive_promoters.bed")
@@ -181,14 +181,14 @@ qc$ratio = qc$read_in_peak/qc$num_of_reads
 idx <- which(qc$promoter_cov > 0.03 & qc$ratio > 0.2 & qc$num_of_reads > 1000)
 qc_sel <- qc[idx,]
 
-# among these cells, further filter barcodes with 
-pvalues <- sapply(qc_sel$num_of_reads, function(x) 
-           poisson.test(x, mean(qc_sel$num_of_reads), 
-           alternative="greater")$p.value)
-fdrs <- p.adjust(pvalues, "BH")
-idx <- which(fdrs < 1e-2)
+# among these cells, further filter PUTATIVE DOUBLETS ((OPTIONAL NOT SUGGUESTED, UNSTABLE))
+#pvalues <- sapply(qc_sel$num_of_reads, function(x) 
+#           poisson.test(x, mean(qc_sel$num_of_reads), 
+#           alternative="greater")$p.value)
+#fdrs <- p.adjust(pvalues, "BH")
+#idx <- which(fdrs < 1e-2)
 
-write.table(qc_sel[idx,1], file = "p56.rep1.xgi", append = FALSE, 
+write.table(qc_sel[,1], file = "p56.rep1.xgi", append = FALSE, 
 			  quote = FALSE, sep = "\t", eol = "\n", 
 			  na = "NA", dec = ".", row.names = FALSE,
 			  col.names = FALSE, qmethod = c("escape", "double"),
