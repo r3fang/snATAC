@@ -236,6 +236,7 @@ Step 6. Generate binary accessibility matrix (**NOTE: this may require large RAM
 ```
 
 Step 7. Calculate jaccard index
+*(NOTE: snATAC jacard may require large memory when you have more cells, "Segmentation fault" means you need larger RAM)*
 
 ```bash
 # mannually count number of rows (1,464)
