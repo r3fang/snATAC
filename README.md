@@ -1,7 +1,7 @@
 ## Introduction
 snATAC is a Ren-lab in-house bioinformatics pipeline for single-nucleus ATAC-seq (snATAC-seq).
 
-## Requirements
+## Dependency
 
 - softwares ([samtools](http://www.htslib.org/doc/samtools.html), [Python 2.7](https://www.python.org/download/releases/2.7/), [bedtools](http://bedtools.readthedocs.io/en/latest/), [MACS2](https://github.com/taoliu/MACS), [bwa](https://github.com/lh3/bwa))
 - python packages ([pysam](http://pysam.readthedocs.io/en/latest/api.html), [pybedtools](https://daler.github.io/pybedtools/))
@@ -37,6 +37,24 @@ Note: To use snATAC pipeline, you need to first decomplex barcode
 combination and integrate barcodes to the beginning of the
 read name in both R1 and R2 fastq files.
 ```
+
+## Requirement
+Before alignment, you need to first decomplex the FASTQ file by adding the barcode to the beginning of each read. Below is one example of decomplexed R1 and R2 for snATAC-seq. Each read name follows this format: "@" + "barcode" + ":" + "original read_name". Unfortunately, because barcode design may be different between each experiment, we decided not to include this part in the pipeline.
+
+```bash
+> zcat p56.R1.fastq.gz | head
+@TCCGGAGATAAGGCGAAAGGAGTAATAGAGGC:SN1113732HY737BCXX2110113481882 1N00
+GTGTTGTTCTAGCTGGACAGGACAACTTCCTATCCTCCCCTTTAGCCCTA
++
+DDDDDIIIIIIIIIIIIIIIHIIIIIIIHHIHIIIIIIIIHIIIHIIIHI
+
+> zcat p56.R2.fastq.gz | head
+@TCCGGAGATAAGGCGAAAGGAGTAATAGAGGC:SN1113732HY737BCXX2110113481882 2N00
+CGGGCTCCTCGGCCGATATGTATGAGTAGGAAGGTGTCCTGTCCAGCTAG
++
+<0000/11110000/<///<<11111<111<110<DCH1G<<<11111<1
+```     
+
 
 ## Pipeline
 **snATAC** has following steps:
