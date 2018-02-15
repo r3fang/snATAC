@@ -428,7 +428,7 @@ write.table(data.frame(cluster), file = "p56.rep1.cluster",
 ```
 
 ## Cite us
-Preissl S.\*, Fang R.\*, Zhao Y., Raviram R., Zhang Y., Brandon C.S., Huang H., Gorkin D.U., Afzal V., Dickel D.E., Kuan S., Visel A., Pennacchio L.A., Zhang K., Ren B. **Single nucleus analysis of the chromatin landscape in mouse forebrain development**. bioRxiv 159137; doi: https://doi.org/10.1101/159137. (* contributed equally)
+Preissl S.\*, Fang R.\*, Zhao Y., Raviram R., Zhang Y., Brandon C.S., Huang H., Gorkin D.U., Afzal V., Dickel D.E., Kuan S., Visel A., Pennacchio L.A., Zhang K., Ren B. **Single-nucleus analysis of accessible chromatin in developing mouse forebrain reveals cell-type-specific transcriptional regulation**. Nature Neuroscience (2018). (* contributed equally)
 
 
 
