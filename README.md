@@ -389,6 +389,9 @@ write.table(data.frame(cluster), file = "p56.rep1.cluster",
 
 ![cluster](https://github.com/r3fang/snATAC/blob/master/images/Rplot_cluster.png)
 
+## Cite us
+Preissl S.\*, Fang R.\*, Zhao Y., Raviram R., Zhang Y., Brandon C.S., Huang H., Gorkin D.U., Afzal V., Dickel D.E., Kuan S., Visel A., Pennacchio L.A., Zhang K., Ren B. **Single-nucleus analysis of accessible chromatin in developing mouse forebrain reveals cell-type-specific transcriptional regulation**. Nat Neurosci. 2018 Feb 12. doi: 10.1038/s41593-018-0079-3.(* contributed equally)
+
 ## File Organization
 
 ```bash
@@ -427,9 +430,6 @@ write.table(data.frame(cluster), file = "p56.rep1.cluster",
 # output from clustering
 |____p56.rep1.cluster
 ```
-
-## Cite us
-Preissl S.\*, Fang R.\*, Zhao Y., Raviram R., Zhang Y., Brandon C.S., Huang H., Gorkin D.U., Afzal V., Dickel D.E., Kuan S., Visel A., Pennacchio L.A., Zhang K., Ren B. **Single-nucleus analysis of accessible chromatin in developing mouse forebrain reveals cell-type-specific transcriptional regulation**. Nat Neurosci. 2018 Feb 12. doi: 10.1038/s41593-018-0079-3.(* contributed equally)
 
 
 
