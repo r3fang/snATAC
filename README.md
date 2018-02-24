@@ -1,6 +1,6 @@
 ## Introduction
 snATAC is a Ren-lab in-house bioinformatics pipeline for single-nucleus ATAC-seq (snATAC-seq).
-To download the our full data set [GSE100033](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE100033).
+To download the our full data set from [here](http://renlab.sdsc.edu/r3fang/snATAC/) or [GSE100033](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE100033).
 
 ## Dependency
 
