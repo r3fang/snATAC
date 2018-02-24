@@ -106,13 +106,14 @@ Step 1. Alignment using bwa (or bowtie2) in pair-end.
           p56.rep1.R1.decomplex.fastq.gz \
           p56.rep1.R2.decomplex.fastq.gz \
           | samtools view -bS - > p56.rep1.bam
+> samtools sort -t 5 -n p56.rep1.bam -o p56.rep1.nsrt.bam
 ```
 
 Step 2. Pre-processing.
 
 ```bash
 > ./bin/snATAC pre -t 5 -m 30 -f 2000 -e 75 \
-                   -i p56.rep1.bam \
+                   -i p56.rep1.nsrt.bam \
                    -o p56.rep1.bed.gz 2> p56.rep1.pre.log
 ```
 ``./bin/snATAC pre`` will output two files p56.pre.bed.gz and p56.rep1.pre.log. p56.pre.bed.gz contains read and corresponding barcode, p56.rep1.pre.log contains basic quality control. Below is one example of p56.rep1.pre.log.
