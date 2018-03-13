@@ -1,6 +1,6 @@
 ## Introduction
 snATAC is a Ren-lab in-house bioinformatics pipeline for single-nucleus ATAC-seq (snATAC-seq).
-To download the our full data set from [here](http://renlab.sdsc.edu/r3fang/snATAC/) or [GSE100033](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE100033).
+Download the our full data set from [here](http://renlab.sdsc.edu/r3fang/snATAC/).
 
 ## Dependency
 
@@ -198,7 +198,7 @@ qc$read_in_peak = 0;
 qc$promoter_cov[match(promoter_cov$V1, qc$barcode)] = promoter_cov$V2/nrow(consecutive_promoters)
 qc$read_in_peak[match(read_in_peak$V1, qc$barcode)] = read_in_peak$V2
 qc$ratio = qc$read_in_peak/qc$num_of_reads
-idx <- which(qc$promoter_cov > 0.03 & qc$ratio > 0.2 & qc$num_of_reads > 1000)
+idx <- which(qc$promoter_cov > 0.09 & qc$ratio > 0.2 & qc$num_of_reads > 1000)
 qc_sel <- qc[idx,]
 
 # among these cells, further filter PUTATIVE DOUBLETS ((OPTIONAL NOT SUGGUESTED, UNSTABLE))
