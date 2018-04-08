@@ -113,7 +113,10 @@ def main():
         fout.write("\t".join(list(item))+"\n")
 
     samfile.close()
-    os.remove(input_bam_new)    
+    try:
+        os.remove(input_bam_new);    
+    except OSError as e:
+        pass;
     print  >>sys.stderr, "number of totol reads               |  ", NUM_READS;
     print  >>sys.stderr, "number of uniquely mapped reads     |  ", NUM_UNIQ;
     print  >>sys.stderr, "number of properly paired reads     |  ", NUM_PAIRED;
