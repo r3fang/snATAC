@@ -72,6 +72,8 @@ def main():
         pysam.sort("-n", "\t".join(["-@", str(num_threads)]), "-o", input_bam_new, input_bam)
         samfile.close()
         samfile = pysam.AlignmentFile(input_bam_new, "rb")
+    else:
+        input_bam_new = None;
 
     genome_size = dict([[item["SN"], int(item["LN"])] for item in samfile.header["SQ"]])
 
@@ -113,10 +115,11 @@ def main():
         fout.write("\t".join(list(item))+"\n")
 
     samfile.close()
-    try:
-        os.remove(input_bam_new);    
-    except OSError as e:
-        pass;
+    if input_bam_new != None:
+        try:
+            os.remove(input_bam_new);    
+        except OSError as e:
+            pass;
     print  >>sys.stderr, "number of totol reads               |  ", NUM_READS;
     print  >>sys.stderr, "number of uniquely mapped reads     |  ", NUM_UNIQ;
     print  >>sys.stderr, "number of properly paired reads     |  ", NUM_PAIRED;
