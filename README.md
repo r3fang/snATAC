@@ -93,8 +93,8 @@ CGGGCTCCTCGGCCGATATGTATGAGTAGGAAGGTGTCCTGTCCAGCTAG
 Step 0. Download sample data.     
 
 ```bash
-> wget http://renlab.sdsc.edu/r3fang/snATAC/p56.rep1.R1.decomplex.fastq.gz
-> wget http://renlab.sdsc.edu/r3fang/snATAC/p56.rep1.R2.decomplex.fastq.gz
+> wget http://renlab.sdsc.edu/r3fang/projects/Preissl_Nat_Neuro/data_raw/p56.rep1.R1.decomplex.fastq.gz
+> wget http://renlab.sdsc.edu/r3fang/projects/Preissl_Nat_Neuro/data_raw/p56.rep1.R2.decomplex.fastq.gz
 > wget http://renlab.sdsc.edu/r3fang/snATAC/mm10.tar.gz
 > tar -xvzf mm10.tar.gz
 ```
