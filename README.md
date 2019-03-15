@@ -1,3 +1,5 @@
+## NOTE: This project is no longer under maintenance, please find our latest pipeline SnapATAC [here](https://github.com/r3fang/SnapATAC) 
+
 ## Introduction
 snATAC is a Ren-lab in-house bioinformatics pipeline for single-nucleus ATAC-seq (snATAC-seq).
 Download the our full data set from [here](http://renlab.sdsc.edu/r3fang/snATAC/).
